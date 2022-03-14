@@ -1,0 +1,59 @@
+[app]
+port = 9130
+loglevel = "debug"
+logfile = "/tmp/axis-blog/log.log"
+avatar_dir = "/static/avatar/"
+article_dir = "/static/articles/"
+voice_dir = "/static/voice"
+photo_dir = "/static/photos"
+config_dir = "/static/config"
+talk_dir = "/static/talks"
+
+[db]
+type = "mysql"
+host = "localhost"
+port = "3306"
+username = "root"
+password = ""
+dbname = "blog"
+
+[redis]
+host = "localhost"
+port = "6379"
+password = ""
+
+[rabbitmq]
+host = "localhost"
+port = "5672"
+username = ""
+password = ""
+
+# 邮箱配置
+[mail]
+host = ""
+port = "587"
+username = ""
+password = ""
+
+#oss 服务
+[oss]
+host = ""
+endpoint = ""
+access_key_id = ""
+access_key_secret = ""
+bucket_name = ""
+
+# QQ配置
+[qq]
+appid = ""
+check_token_url = ""
+user_info_url = ""
+
+# 微博配置
+[weibo]
+appid = ""
+app_secret = ""
+grant_type = ""
+redirect_url = ""
+access_token_url = ""
+user_info_url = ""
