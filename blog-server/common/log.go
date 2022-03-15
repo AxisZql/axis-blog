@@ -7,16 +7,14 @@ import (
 	"os"
 )
 
-var logger = Logger()
-
 // Logger 自定义日志记录器
 func Logger() *zap.Logger {
 	hook := lumberjack.Logger{
-		Filename:   "./logs/GzhuNew.log", //日志文件路径
-		MaxSize:    128,                  //每个日志文件保存的最大尺寸 单位：M
-		MaxBackups: 30,                   //日志文件最多保存多少个备份
-		MaxAge:     7,                    //文件最多保存多少天
-		Compress:   true,                 //是否压缩
+		Filename:   "/tmp/axis-blog/log.log", //日志文件路径
+		MaxSize:    128,                      //每个日志文件保存的最大尺寸 单位：M
+		MaxBackups: 30,                       //日志文件最多保存多少个备份
+		MaxAge:     7,                        //文件最多保存多少天
+		Compress:   true,                     //是否压缩
 	}
 
 	encodeConfig := zapcore.EncoderConfig{
