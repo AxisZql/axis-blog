@@ -43,6 +43,12 @@ func EnvInit() {
 	if err = InitDb(); err != nil {
 		logger.Error(err.Error())
 	}
+
+	// 初始化Redis
+	if err = InitRedis(); err != nil {
+		logger.Error(err.Error())
+	}
+
 	logger.Info("=========== finish to init app env ===========")
 
 }
