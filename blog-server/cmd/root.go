@@ -13,6 +13,7 @@ var rootCmd = &cobra.Command{
 	Long:  "AXIS-BLOG COMMAND",
 	Run: func(cmd *cobra.Command, args []string) {
 		// 配置默认启动
+		AxAPi()
 	},
 }
 
@@ -25,7 +26,7 @@ func init() {
 }
 
 func Execute() {
-	rootCmd.AddCommand()
+	rootCmd.AddCommand(apiCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Printf("服务启动失败:%v\n", err)

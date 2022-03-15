@@ -1,6 +1,7 @@
 package main
 
 import (
+	"blog-server/cmd"
 	"fmt"
 	"runtime"
 )
@@ -27,4 +28,5 @@ func init() {
 
 func main() {
 	fmt.Println(description)
+	cmd.Execute()
 }

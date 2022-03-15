@@ -20,6 +20,7 @@ import (
 type Configure struct {
 	App struct {
 		Port       int64  `json:"port" remark:"http端口" must:"true"`
+		InitModels bool   `json:"init_models" remark:"是否初始化模型" must:"false"`
 		Loglevel   string `json:"loglevel" remark:"日志级别" must:"true"`
 		Logfile    string `json:"logfile" remark:"日志文件" must:"true"`
 		AvatarDir  string `json:"avatar_dir" remark:"头像目录" must:"ture"`
@@ -46,39 +47,39 @@ type Configure struct {
 	}
 
 	RabbitMq struct {
-		Host     string `json:"host" remark:"MQ ip" must:"true"`
-		Port     string `json:"port" remark:"MQ 端口" must:"true"`
-		Username string `json:"username" remark:"MQ 用户名" must:"true"`
-		Password string `json:"password" remark:"MQ 密码" must:"true"`
+		Host     string `json:"host" remark:"MQ ip" must:"false"`
+		Port     string `json:"port" remark:"MQ 端口" must:"false"`
+		Username string `json:"username" remark:"MQ 用户名" must:"false"`
+		Password string `json:"password" remark:"MQ 密码" must:"false"`
 	}
 
 	Mail struct {
-		Host     string `json:"host" remark:"邮箱服务器" must:"true"`
-		Port     string `json:"port" remark:"邮箱服务端口" must:"true"`
-		Username string `json:"username" remark:"邮箱用户名" must:"true"`
-		Password string `json:"password" remark:"邮箱授权码" must:"true"`
+		Host     string `json:"host" remark:"邮箱服务器" must:"false"`
+		Port     string `json:"port" remark:"邮箱服务端口" must:"false"`
+		Username string `json:"username" remark:"邮箱用户名" must:"false"`
+		Password string `json:"password" remark:"邮箱授权码" must:"false"`
 	}
 
 	Oss struct {
-		Host            string `json:"host" remark:"oss域名" must:"true"`
-		AccessKeyId     string `json:"access_key_id" remark:"访问密钥id" must:"true"`
-		AccessKeySecret string `json:"access_key_secret" remark:"访问密钥密码" must:"true"`
-		BucketName      string `json:"bucket_name" remark:"bucket名称" must:"true"`
+		Host            string `json:"host" remark:"oss域名" must:"false"`
+		AccessKeyId     string `json:"access_key_id" remark:"访问密钥id" must:"false"`
+		AccessKeySecret string `json:"access_key_secret" remark:"访问密钥密码" must:"false"`
+		BucketName      string `json:"bucket_name" remark:"bucket名称" must:"false"`
 	}
 
 	QQ struct {
-		Appid         string `json:"appid" remark:"QQ appid" must:"true"`
-		CheckTokenUrl string `json:"check_token_url" remark:"校验token地址" must:"true"`
-		UserInfoUrl   string `json:"user_info_url" remark:"QQ用户信息地址" must:"true"`
+		Appid         string `json:"appid" remark:"QQ appid" must:"false"`
+		CheckTokenUrl string `json:"check_token_url" remark:"校验token地址" must:"false"`
+		UserInfoUrl   string `json:"user_info_url" remark:"QQ用户信息地址" must:"false"`
 	}
 
 	Weibo struct {
-		Appid          string `json:"appid" remark:"微博appid" must:"true"`
-		AppSecret      string `json:"app_secret" remark:"微博appSecret" must:"true"`
-		GrantType      string `json:"grant_type" remark:"微博登陆类型" must:"true"`
-		RedirectUrl    string `json:"redirect_url" remark:"微博回调域名" must:"true"`
-		AccessTokenUrl string `json:"access_token_url" remark:"微博访问令牌地址" must:"true"`
-		UserInfoUrl    string `json:"user_info_url" remark:"微博用户信息地址" must:"true"`
+		Appid          string `json:"appid" remark:"微博appid" must:"false"`
+		AppSecret      string `json:"app_secret" remark:"微博appSecret" must:"false"`
+		GrantType      string `json:"grant_type" remark:"微博登陆类型" must:"false"`
+		RedirectUrl    string `json:"redirect_url" remark:"微博回调域名" must:"false"`
+		AccessTokenUrl string `json:"access_token_url" remark:"微博访问令牌地址" must:"false"`
+		UserInfoUrl    string `json:"user_info_url" remark:"微博用户信息地址" must:"false"`
 	}
 }
 
