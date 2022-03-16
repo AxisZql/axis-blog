@@ -9,7 +9,7 @@ import "github.com/gin-gonic/gin"
  */
 
 type MenuHandle interface {
-	ListMenus(*gin.Context)        //查看菜单lieb
+	ListMenus(*gin.Context)        //查看菜单列表
 	SaveOrUpdateMenu(*gin.Context) //新增或者修改菜单
 	DeleteMenu(*gin.Context)       //删除菜单
 	ListMenuOptions(*gin.Context)  //查看菜单选项
