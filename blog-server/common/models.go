@@ -27,6 +27,13 @@ type TArticle struct {
 	UpdateTime     time.Time `json:"update_time,omitempty" remark:"更新时间" gorm:"type:datetime;default:current_timestamp;not null"`
 }
 
+// TLike 点赞表 {"articleLikeSet":[],"commentLikeSet:[],"talkLikeSet":[]}
+type TLike struct {
+	ID       int64  `json:"id,omitempty" remark:"自增id" gorm:"primary_key"`
+	UserId   int64  `json:"user_id,omitempty" remark:"用户id" gorm:"type:bigint;not null"`
+	LikeItem string `json:"article_like,omitempty" remark:"用户点赞文章id，评论id，说说id数组" gorm:"type:text"`
+}
+
 // TCategory 分类表
 type TCategory struct {
 	ID           int64     `json:"id,omitempty" remark:"自增id" gorm:"primary_key"`
@@ -234,10 +241,11 @@ type TUniqueView struct {
 type TUserAuth struct {
 	ID            int64     `json:"id,omitempty" remark:"自增id" gorm:"primary_key"`
 	UserInfoId    int64     `json:"user_info_id,omitempty" remark:"用户信息id" gorm:"type:bigint;not null"`
-	Username      string    `json:"username,omitempty" remark:"用户名" gorm:"type:varchar(50);not null"`
+	Username      string    `json:"username,omitempty" remark:"用户名" gorm:"type:varchar(50);unique;not null"`
 	Password      string    `json:"password,omitempty" remark:"密码" gorm:"type:varchar(255);not null"`
-	LoginType     int       `json:"login_type,omitempty" remark:"登陆类型" gorm:"type:tinyint;not null"`
+	LoginType     int       `json:"login_type,omitempty" remark:"登陆类型 1账号密码 2QQ 3微博" gorm:"type:tinyint;not null"`
 	LastLoginTime time.Time `json:"last_login_time,omitempty" remark:"上次登陆时间" gorm:"type:datetime"`
+	UserAgent     string    `json:"user_agent,omitempty" remark:"浏览器请求头UserAgent包含操作系统和浏览器信息" gorm:"type:varchar(255);not null"`
 	IpAddress     string    `json:"ip_address,omitempty" remark:"ip地址" gorm:"type:varchar(50);not null"`
 	IpSource      string    `json:"ip_source,omitempty" remark:"ip来源" gorm:"type:varchar(255);not null"`
 	CreateTime    time.Time `json:"create_time,omitempty" remark:"创建时间" gorm:"type:datetime;default:current_timestamp;not null"`
@@ -246,7 +254,7 @@ type TUserAuth struct {
 
 // TUserInfo 用户信息表
 type TUserInfo struct {
-	ID         int64     `json:"id,omitempty" remark:"自增id" gorm:"primary_key"`
+	ID         int64     `json:"id,omitempty" remark:"自增id(这是userid)" gorm:"primary_key"`
 	Email      string    `json:"email,omitempty" remark:"邮箱号" gorm:"type:varchar(50)"`
 	Nickname   string    `json:"nickname,omitempty" remark:"用户昵称" gorm:"type:varchar(50);not null"`
 	Avatar     string    `json:"avatar,omitempty" remark:"用户头像" gorm:"type:varchar(255);not null"`
