@@ -58,3 +58,9 @@ grant_type = ""
 redirect_url = ""
 access_token_url = ""
 user_info_url = ""
+
+
+# IP接口配置
+[ip]
+app_key = ""
+app_code = ""

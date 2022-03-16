@@ -81,6 +81,11 @@ type Configure struct {
 		AccessTokenUrl string `json:"access_token_url" remark:"微博访问令牌地址" must:"false"`
 		UserInfoUrl    string `json:"user_info_url" remark:"微博用户信息地址" must:"false"`
 	}
+
+	Ip struct {
+		AppKey  string `json:"app_key" remark:"ip api key" must:"false"`
+		AppCode string `json:"app_code" remark:"ip api code" must:"false"`
+	}
 }
 
 func InitViper() {
