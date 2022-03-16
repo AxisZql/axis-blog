@@ -43,3 +43,9 @@ func Logger() *zap.Logger {
 	logger := zap.New(core, caller, development)
 	return logger
 }
+
+var LG = Logger()
+
+func GetLogger() *zap.Logger {
+	return LG
+}

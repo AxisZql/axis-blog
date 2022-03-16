@@ -32,7 +32,7 @@ func InitDb() error {
 			log.New(os.Stdout, "\r\n", log.LstdFlags),
 			glog.Config{
 				SlowThreshold: time.Second,
-				LogLevel:      glog.Info,
+				LogLevel:      glog.Silent,
 				Colorful:      true,
 			},
 		),
@@ -76,4 +76,8 @@ func modelsInit() {
 		panic(err)
 	}
 	logger.Debug(fmt.Sprintf("models inited in:%s", time.Since(t)))
+}
+
+func GetGorm() *gorm.DB {
+	return db
 }

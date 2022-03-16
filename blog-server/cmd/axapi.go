@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"blog-server/common"
-	util "blog-server/common/tools"
 	ctrl "blog-server/service"
+	util "blog-server/service/utils"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cobra"
@@ -42,6 +42,7 @@ func AxAPi() {
 
 // Routers 路由设置
 func Routers(r *gin.Engine) {
+	login := ctrl.Login{}
 	userAuth := ctrl.UserAuth{}
 	userInfo := ctrl.UserInfo{}
 	tag := ctrl.Tag{}
@@ -64,8 +65,8 @@ func Routers(r *gin.Engine) {
 	home := r.Group("/home")
 
 	r.GET("/", blogInfo.GetBlogHomeInfo)                                  //查看博客信息
-	r.POST("/login", nil)                                                 //用户登陆
-	r.GET("/logout", nil)                                                 //用户注销
+	r.POST("/login", login.Login)                                         //用户登陆
+	r.GET("/logout", login.LoginOut)                                      //用户注销
 	r.POST("/register", userAuth.Register)                                //用户注册
 	r.GET("/talks", talk.ListTalks)                                       //查看说说列表
 	r.GET("/talk/:talkId", talk.GetTalkById)                              //根据id查看说说
@@ -105,7 +106,6 @@ func Routers(r *gin.Engine) {
 		users.PUT("/info", userInfo.UpdateUserInfo)      //更新用户信息
 		users.POST("/avatar", userInfo.UpdateUserAvatar) //更新用户头像
 		users.POST("/email", userInfo.SaveUserEmail)     //绑定用户邮箱
-		users.PUT("/")
 	}
 
 	admin.Use(util.Auth())
@@ -156,7 +156,6 @@ func Routers(r *gin.Engine) {
 		admin.GET("/menus", menus.ListMenus)                                     //查看菜单列表
 		admin.POST("/menus", menus.SaveOrUpdateMenu)                             //新增或者修改菜单
 		admin.DELETE("/menus/:menuId", menus.DeleteMenu)                         //删除菜单
-		admin.GET("/role/menus", menus.ListUserMenus)                            //查看角色菜单选项
 		admin.GET("/role/menus", menus.ListUserMenus)                            //查看当前用户菜单
 		admin.GET("/operation/logs", loggerHandler.ListOperationLogs)            //查看操作日志
 		admin.DELETE("/operation/logs", loggerHandler.DeleteOperationLogs)       //删除操作日志
