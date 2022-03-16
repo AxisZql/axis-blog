@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-var logger = Logger()
+var logger = GetLogger()
 
 func EnvInit() {
 	//初始化配置文件
