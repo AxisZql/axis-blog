@@ -73,3 +73,95 @@ func GetIpAddressAndSource(ip string) (*ipInfo, error) {
 	}
 	return &_ipInfo, nil
 }
+
+//======转换菜单数据为前端接受的格式
+
+type MenuPart struct {
+	Name      interface{} `json:"name"`
+	Path      string      `json:"path"`
+	Component interface{} `json:"component"`
+	Icon      interface{} `json:"icon"`
+	Hidden    interface{} `json:"hidden"`
+	Children  []MenuPart  `json:"children"`
+}
+
+func findMenuChild(data []VUserMenu, parentId int64) ([]MenuPart, []VUserMenu) {
+	if len(data) == 0 {
+		return nil, data
+	}
+	h := map[int]bool{0: false, 1: true}
+	list := make([]MenuPart, 0)
+	for i := 0; i < len(data); i++ {
+		val := data[i]
+		if val.ParentId == parentId {
+			r := data[i+1:]
+			data = data[:i]
+			data = append(data, r...)
+			i-- //取出一个i不能增加
+			child, _ := findMenuChild(data, val.MenuId)
+			t := MenuPart{
+				Name:      val.Name,
+				Path:      val.Path,
+				Component: val.Component,
+				Icon:      val.Icon,
+				Hidden:    h[val.IsHidden],
+				Children:  child,
+			}
+			list = append(list, t)
+		}
+	}
+	if len(list) == 0 {
+		return nil, data
+	}
+	return list, data
+}
+
+func ConvertMenuType(data []VUserMenu) []MenuPart {
+	h := map[int]bool{0: false, 1: true}
+	mList := make([]MenuPart, 0)
+	for len(data) != 0 {
+		for i := 0; i < len(data); i++ {
+			val := data[i]
+			if val.Component != "Layout" && val.ParentId <= 0 {
+				t := MenuPart{
+					Path:      val.Path,
+					Component: "Layout",
+					Hidden:    h[val.IsHidden],
+					Children: []MenuPart{
+						{
+							Name:      val.Name,
+							Component: val.Component,
+							Icon:      val.Icon,
+							Children:  nil,
+						},
+					},
+				}
+				mList = append(mList, t)
+				r := data[i+1:]
+				data = data[:i]
+				data = append(data, r...)
+				continue
+			}
+			if val.ParentId <= 0 {
+				//先删除出出表节点
+				r := data[i+1:]
+				data = data[:i]
+				data = append(data, r...)
+				child, cdata := findMenuChild(data, val.MenuId)
+				data = cdata
+				t := MenuPart{
+					Name:      val.Name,
+					Path:      val.Path,
+					Component: val.Component,
+					Icon:      val.Icon,
+					Hidden:    h[val.IsHidden],
+					Children:  child,
+				}
+				mList = append(mList, t)
+			}
+
+		}
+	}
+
+	return mList
+}

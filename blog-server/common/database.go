@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm/schema"
 	"log"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -16,6 +17,24 @@ import (
 * @date:2022-3-15 1:59 PM
 * @desc:数据库初始化
  */
+
+var (
+	// user后台菜单组件权限表
+	vUserMenu = `create view v_user_menu as
+       select user_id,
+       menu_id,
+       name,
+       path,
+       component,
+       icon,
+       order_num,
+       parent_id,
+       is_hidden
+from t_user_role ur
+         inner join t_role_menu rm
+                    on ur.role_id = rm.role_id
+         inner join t_menu m on rm.menu_id = m.id order by menu_id asc;`
+)
 
 var (
 	db *gorm.DB
@@ -74,6 +93,14 @@ func modelsInit() {
 	if e1 != nil {
 		err := fmt.Errorf("初始化表失败:%v", e1)
 		panic(err)
+	}
+	e2 := db.Exec("drop view v_user_menu;")
+	if e2.Error != nil && !strings.Contains(e2.Error.Error(), "Unknown table") {
+		panic(e2)
+	}
+	e2 = db.Exec(vUserMenu)
+	if e2.Error != nil {
+		panic(e2)
 	}
 	logger.Debug(fmt.Sprintf("models inited in:%s", time.Since(t)))
 }

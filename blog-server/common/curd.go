@@ -50,3 +50,16 @@ func (c *Curd) Create(table interface{}, field ...string) error {
 	}
 	return nil
 }
+
+func (c *Curd) SqlQuery(sql string, dest interface{}, val ...interface{}) (bool, error) {
+	db := GetGorm()
+	result := db.Exec(sql, val).First(&dest)
+	if result.Error != nil && errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		logger.Error(fmt.Sprintf("SQL语句执行失败:%v", result.Error))
+		return false, result.Error
+	}
+	if result.Error == nil {
+		return true, nil
+	}
+	return false, nil
+}

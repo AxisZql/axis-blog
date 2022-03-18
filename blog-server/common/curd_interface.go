@@ -8,6 +8,7 @@ package common
 
 type CurdHandle interface {
 	Select(table interface{}, condition string, val ...interface{}) (bool, error)
-	Update(table interface{}, condition string, val ...interface{}) (bool, error)
+	Update(table interface{}, val interface{}, condition string, queryVal ...interface{}) (bool, error)
 	Create(table interface{}, field ...string) error
+	SqlQuery(sql string, dest interface{}, val ...interface{}) (bool, error)
 }

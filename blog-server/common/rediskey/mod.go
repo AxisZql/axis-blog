@@ -1,4 +1,4 @@
-package redis
+package rediskey
 
 import "time"
 
@@ -25,7 +25,7 @@ const CommentLikeCount string = "comment_like_count"
 
 // UserLike 用户点赞数据
 const UserLike string = "user_like:%v"
-const ExpireUserLike = 5 * time.Second
+const ExpireUserLike = 60 * time.Second
 
 // WebsiteConfig 网站配置
 const WebsiteConfig string = "website_config"

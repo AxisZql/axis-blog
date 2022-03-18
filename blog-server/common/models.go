@@ -281,3 +281,17 @@ type TWebsiteConfig struct {
 	CreateTime time.Time `json:"create_time,omitempty" remark:"创建时间" gorm:"type:datetime;default:current_timestamp;not null"`
 	UpdateTime time.Time `json:"update_time,omitempty" remark:"更新时间" gorm:"type:datetime;default:current_timestamp;not null"`
 }
+
+//==== 视图区
+
+type VUserMenu struct {
+	UserId    int64  `json:"user_id"`
+	MenuId    int64  `json:"menu_id"`
+	Name      string `json:"name"`
+	Path      string `json:"path"`
+	Component string `json:"component"`
+	Icon      string `json:"icon"`
+	OrderNum  string `json:"order_num"`
+	ParentId  int64  `json:"parent_id"`
+	IsHidden  int    `json:"is_hidden"`
+}
