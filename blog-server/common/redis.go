@@ -22,10 +22,10 @@ func InitRedis() (err error) {
 	logger.Info(fmt.Sprintf("Ping Redis: %s:%s", host, port))
 	_, err = RedisCli.Ping().Result()
 	if err != nil {
-		logger.Error(fmt.Sprintf("init redis failed:%v", err))
+		logger.Error(fmt.Sprintf("init rediskey failed:%v", err))
 		return
 	}
-	logger.Info(fmt.Sprintf("connect to redis: %s:%s", host, port))
+	logger.Info(fmt.Sprintf("connect to rediskey: %s:%s", host, port))
 	return
 }
 
@@ -46,7 +46,7 @@ func (c *CacheOptions) GetSet() (interface{}, error) {
 	return c.Receiver, nil
 }
 
-// GetSetCache 获取缓存，不存在则调用Fun函数获取对应数据加入缓存
+// GetSetCache 获取缓存，不存在则调用Fun函数获取对应数据加入缓存,适用k-v单一映射
 func GetSetCache(c *CacheOptions) (using bool, err error) {
 	if c == nil || c.Receiver == nil || c.Key == "" {
 		err = fmt.Errorf("illegal arguments")
@@ -99,4 +99,27 @@ func GetSetCache(c *CacheOptions) (using bool, err error) {
 		}
 	}
 	return
+}
+
+// GetSetSetCache 获取或设置集合类型缓存
+func GetSetSetCache(key string, value interface{}) (exist bool, err error) {
+	result, err := RedisCli.SIsMember(key, value).Result()
+	if err != nil {
+		logger.Error(err.Error())
+		return false, err
+	}
+	// 如果在当前集合中不存在
+	if !result {
+		_, err = RedisCli.SAdd(key, value).Result()
+		if err != nil {
+			logger.Error(err.Error())
+			return false, err
+		}
+		return false, nil
+	}
+	return true, nil
+}
+
+func GetRedis() *redis.Client {
+	return RedisCli
 }
