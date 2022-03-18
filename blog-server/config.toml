@@ -1,5 +1,5 @@
 [app]
-port = 9130
+port = 8080
 init_models = "true"
 loglevel = "debug"
 logfile = "./tmp/axis-blog/log.log"
@@ -28,6 +28,9 @@ host = "localhost"
 port = "5672"
 username = ""
 password = ""
+
+[jwt]
+key = ""
 
 # 邮箱配置
 [mail]

@@ -3,7 +3,6 @@ package cmd
 import (
 	"blog-server/common"
 	ctrl "blog-server/service"
-	util "blog-server/service/utils"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cobra"
@@ -91,13 +90,13 @@ func Routers(r *gin.Engine) {
 	r.GET("/articles/search", article.ListArticleBySearch)                //搜索文章
 	r.GET("/articles/:articleId/like", article.SaveArticleLike)           //点赞文章
 
-	home.Use(util.Auth())
+	home.Use(ctrl.Auth())
 	{
 		home.GET("/talks", talk.ListHomeTalks) //查看首页说说
 	}
 
 	r.GET("/admin", blogInfo.GetBlogBackInfo) //查询后台信息
-	users.Use(util.Auth())
+	users.Use()
 	{
 		users.GET("/code", userAuth.SendEmailCode)       //发送邮箱验证码
 		users.PUT("/password", userAuth.UpdatePassword)  //修改密码
@@ -108,7 +107,7 @@ func Routers(r *gin.Engine) {
 		users.POST("/email", userInfo.SaveUserEmail)     //绑定用户邮箱
 	}
 
-	admin.Use(util.Auth())
+	admin.Use(ctrl.Auth())
 	{
 		admin.GET("/users/area", userAuth.ListUserAreas)                         //获取用户区域分布
 		admin.GET("/users", userAuth.ListUsers)                                  //查询用户后台列表
@@ -156,7 +155,8 @@ func Routers(r *gin.Engine) {
 		admin.GET("/menus", menus.ListMenus)                                     //查看菜单列表
 		admin.POST("/menus", menus.SaveOrUpdateMenu)                             //新增或者修改菜单
 		admin.DELETE("/menus/:menuId", menus.DeleteMenu)                         //删除菜单
-		admin.GET("/role/menus", menus.ListUserMenus)                            //查看当前用户菜单
+		admin.GET("/role/menus", menus.ListMenuOptions)                          //查看当前角色菜单
+		admin.GET("/user/menus", menus.ListUserMenus)                            //列出当前角色菜单
 		admin.GET("/operation/logs", loggerHandler.ListOperationLogs)            //查看操作日志
 		admin.DELETE("/operation/logs", loggerHandler.DeleteOperationLogs)       //删除操作日志
 		admin.GET("/links", friendLink.ListFriendLinksBack)                      //查看后台友链列表

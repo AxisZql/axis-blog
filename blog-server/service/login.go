@@ -3,9 +3,8 @@ package service
 import (
 	"blog-server/common"
 	"blog-server/common/errorcode"
-	"blog-server/common/redis"
+	"blog-server/common/rediskey"
 	ctrl "blog-server/controllers"
-	rut "blog-server/service/utils"
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -41,29 +40,34 @@ type RespLogin struct {
 func (l *Login) Login(ctx *gin.Context) {
 	var form reqLogin
 	if err := ctx.ShouldBind(&form); err != nil {
-		rut.Response(ctx, errorcode.ValidError, nil, false, "用户名和密码不能为空")
+		Response(ctx, errorcode.ValidError, nil, false, "用户名和密码不能为空")
+		return
+	}
+	_session, err2 := Store.Get(ctx.Request, "CurUser")
+	if err2 != nil {
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
 		return
 	}
 	curd := common.Curd{}
 	user := common.TUserAuth{}
 	ok, err := curd.Select(&user, "username = ?", form.Username)
 	if err != nil {
-		rut.Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
 		return
 	} else if !ok {
-		rut.Response(ctx, errorcode.UsernameNotExist, nil, false, "不存在该用户名")
+		Response(ctx, errorcode.UsernameNotExist, nil, false, "不存在该用户名")
 		return
 	}
 	// 验证密码
 	if !common.VerifyPwd(user.Password, form.Password) {
-		rut.Response(ctx, errorcode.AuthorizedError, nil, false, "账号密码错误")
+		Response(ctx, errorcode.AuthorizedError, nil, false, "账号密码错误")
 		return
 	}
 	// 通过IP获取地理位置
 	ip := ctx.ClientIP()
 	ipInfo, err := common.GetIpAddressAndSource(ip)
 	if err != nil {
-		rut.Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
 		return
 	}
 
@@ -71,10 +75,10 @@ func (l *Login) Login(ctx *gin.Context) {
 	userInfo := common.TUserInfo{}
 	ok, err = curd.Select(&userInfo, "id = ?", user.ID)
 	if err != nil {
-		rut.Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
 		return
 	} else if !ok {
-		rut.Response(ctx, errorcode.UsernameNotExist, nil, false, "不存在该用户信息")
+		Response(ctx, errorcode.UsernameNotExist, nil, false, "不存在该用户信息")
 		return
 	}
 
@@ -86,17 +90,17 @@ func (l *Login) Login(ctx *gin.Context) {
 	user.LoginType = 1
 	ok, err = curd.Update(&common.TUserAuth{}, &user, "username = ?", user.Username)
 	if err != nil {
-		rut.Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
 		return
 	} else if !ok {
-		rut.Response(ctx, errorcode.UsernameNotExist, nil, false, "不存在该用户")
+		Response(ctx, errorcode.UsernameNotExist, nil, false, "不存在该用户")
 		return
 	}
 
 	cache := &common.CacheOptions{
-		Key:      fmt.Sprintf(redis.UserLike, userInfo.ID),
+		Key:      fmt.Sprintf(rediskey.UserLike, userInfo.ID),
 		Receiver: new(common.TLike),
-		Duration: redis.ExpireUserLike,
+		Duration: rediskey.ExpireUserLike,
 		Fun: func() (interface{}, error) {
 			var tLike = &common.TLike{}
 			ok, err = curd.Select(tLike, "user_id = ?", user.ID)
@@ -111,7 +115,7 @@ func (l *Login) Login(ctx *gin.Context) {
 	receiver, e1 := cache.GetSet()
 	if e1 != nil {
 		logger.Error(err.Error())
-		rut.Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
 		return
 	}
 
@@ -132,7 +136,7 @@ func (l *Login) Login(ctx *gin.Context) {
 		err = json.Unmarshal([]byte(r.LikeItem), &tl)
 		if err != nil {
 			logger.Error(err.Error())
-			rut.Response(ctx, errorcode.Fail, nil, false, "系统异常")
+			Response(ctx, errorcode.Fail, nil, false, "系统异常")
 			return
 		}
 		data.ArticleLikeSet = tl.ArticleLikeSet
@@ -149,7 +153,15 @@ func (l *Login) Login(ctx *gin.Context) {
 	data.Nickname = userInfo.Nickname
 	data.UserInfoId = user.UserInfoId
 	data.Username = user.Username
-	rut.Response(ctx, errorcode.Success, &data, true, "操作成功")
+
+	_session.Values["userid"] = user.ID
+	_session.Values["login_time"] = time.Now().Unix()
+	err = _session.Save(ctx.Request, ctx.Writer)
+	if err != nil {
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	Response(ctx, errorcode.Success, &data, true, "操作成功")
 	return
 
 }

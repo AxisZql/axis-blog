@@ -41,9 +41,9 @@ type Configure struct {
 	}
 
 	Redis struct {
-		Host     string `json:"host" remark:"redis ip" must:"true"`
+		Host     string `json:"host" remark:"rediskey ip" must:"true"`
 		Port     string `json:"port" remark:"redis端口" must:"true"`
-		Password string `json:"password" remark:"redis 密码" must:"true"`
+		Password string `json:"password" remark:"rediskey 密码" must:"true"`
 	}
 
 	RabbitMq struct {
@@ -51,6 +51,10 @@ type Configure struct {
 		Port     string `json:"port" remark:"MQ 端口" must:"false"`
 		Username string `json:"username" remark:"MQ 用户名" must:"false"`
 		Password string `json:"password" remark:"MQ 密码" must:"false"`
+	}
+
+	Jwt struct {
+		Key string `json:"key" remark:"验证密钥" must:"true"`
 	}
 
 	Mail struct {
