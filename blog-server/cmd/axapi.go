@@ -61,7 +61,6 @@ func Routers(r *gin.Engine) {
 	article := ctrl.Article{}
 	admin := r.Group("/admin")
 	users := r.Group("/users")
-	home := r.Group("/home")
 
 	r.GET("/", blogInfo.GetBlogHomeInfo)                                  //查看博客信息
 	r.POST("/login", login.Login)                                         //用户登陆
@@ -89,11 +88,7 @@ func Routers(r *gin.Engine) {
 	r.GET("/articles/condition", article.ListArticleByCondition)          //根据条件查询文章
 	r.GET("/articles/search", article.ListArticleBySearch)                //搜索文章
 	r.GET("/articles/:articleId/like", article.SaveArticleLike)           //点赞文章
-
-	home.Use(ctrl.Auth())
-	{
-		home.GET("/talks", talk.ListHomeTalks) //查看首页说说
-	}
+	r.GET("/home/talks", talk.ListHomeTalks)                              //查看首页说说
 
 	r.GET("/admin", ctrl.Auth(), blogInfo.GetBlogBackInfo) //查询后台信息
 	users.Use()

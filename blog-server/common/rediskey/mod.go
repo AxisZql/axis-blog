@@ -12,16 +12,16 @@ const CodeExpireTime = 5 * time.Minute
 const BlogViewsCount string = "blog_views_count"
 
 // ArticleViewsCount 文章浏览量
-const ArticleViewsCount string = "article_views_count"
+const ArticleViewsCount string = "article_views_count:"
 
 // ArticleLikeCount 文章点赞量
-const ArticleLikeCount string = "article_like_count"
+const ArticleLikeCount string = "article_like_count:"
 
 // TalkLikeCount 说说点赞量
-const TalkLikeCount string = "talk_like_count"
+const TalkLikeCount string = "talk_like_count:"
 
 // CommentLikeCount 评论点赞量
-const CommentLikeCount string = "comment_like_count"
+const CommentLikeCount string = "comment_like_count:"
 
 // UserLike 用户点赞数据
 const UserLike string = "user_like:%v"

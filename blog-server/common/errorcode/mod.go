@@ -26,6 +26,9 @@ const Fail ErrCode = 51000
 // ValidError 参数校验失败
 const ValidError ErrCode = 52000
 
+// NotFoundResource 找不到资源
+const NotFoundResource ErrCode = 404000
+
 // UsernameExistError 用户名已经存在
 const UsernameExistError ErrCode = 52001
 

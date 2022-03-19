@@ -49,6 +49,65 @@ from t_user_role ur
     FROM t_article
     GROUP BY date
     ORDER BY date desc ;`
+	// 文章信息视图
+	vArticleInfo = `
+    create view v_article_info as 
+          SELECT a.id,
+       article_cover,
+       article_title,
+       article_content,
+       a.type,
+       a.is_top,
+       a.category_id,
+       category_name,
+       view_count,
+       like_count,
+       original_url,
+       a.create_time,
+       a.update_time
+FROM (SELECT id,
+             article_cover,
+             article_title,
+             article_content,
+             type,
+             is_top,
+             view_count,
+             like_count,
+             original_url,
+             create_time,
+             update_time,
+             category_id
+      FROM t_article
+      WHERE is_delete = 0
+        AND status = 1
+      ORDER BY is_top DESC
+     ) a
+         inner JOIN t_category c ON a.category_id = c.id
+ORDER BY a.is_top DESC,a.update_time DESC ,a.create_time  DESC;`
+	// 评论视图
+	vComment = `
+    create view v_comment as 
+    select ans.*, tu2.nickname as reply_nickname, tu2.web_site as reply_web_site
+from (select tc.id,
+             parent_id,
+             tu.id as user_id,
+             nickname,
+             avatar,
+             web_site,
+             reply_user_id,
+             comment_content,
+             topic_id,
+             type,
+             is_delete,
+             is_review,
+             tc.create_time
+      from (select id, avatar, nickname, web_site
+            from t_user_info) tu
+               join t_comment tc on tu.id = tc.user_id) ans
+         left join t_user_info tu2
+                   on tu2.id = ans.reply_user_id
+where is_review = 1
+  and is_delete = 0;`
 )
 
 var (
@@ -131,7 +190,23 @@ func modelsInit() {
 	}
 	e4 = db.Exec(vArticleStatistics)
 	if e4.Error != nil {
-		panic(4)
+		panic(e4)
+	}
+	e6 := db.Exec("drop view v_article_info;")
+	if e6.Error != nil && !strings.Contains(e6.Error.Error(), "Unknown table") {
+		panic(e2)
+	}
+	e6 = db.Exec(vArticleInfo)
+	if e6.Error != nil {
+		panic(e6)
+	}
+	e7 := db.Exec("drop view v_comment;")
+	if e7.Error != nil && !strings.Contains(e7.Error.Error(), "Unknown table") {
+		panic(e2)
+	}
+	e7 = db.Exec(vComment)
+	if e7.Error != nil {
+		panic(e7)
 	}
 	logger.Debug(fmt.Sprintf("models inited in:%s", time.Since(t)))
 }

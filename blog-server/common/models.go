@@ -21,6 +21,7 @@ type TArticle struct {
 	Type           int       `json:"type,omitempty" remark:"文章类型 1原创 2转载 3翻译" gorm:"type:tinyint;default:0;not null"`
 	OriginalUrl    string    `json:"original_url,omitempty" remark:"原文链接" gorm:"type:varchar(255)"`
 	ViewCount      int64     `json:"view_count,omitempty" remark:"文章访问量" gorm:"type:bigint;default:0;not null"`
+	LikeCount      int64     `json:"like_count,omitempty" remark:"文章点赞数" gorm:"type:bigint;default:0"`
 	IsTop          int       `json:"is_top,omitempty" remark:"是否置顶 0否 1是" gorm:"type:tinyint;default:0;not null"`
 	IsDelete       int       `json:"is_delete,omitempty" remark:"是否删除  0否 1是" gorm:"type:tinyint;default:0;not null"`
 	Status         int       `json:"status,omitempty" remark:"状态值 1公开 2私密 3评论可见" gorm:"type:tinyint;default:1;not null"`
@@ -306,4 +307,20 @@ type VCateGoryCount struct {
 type VArticleStatistics struct {
 	Date  time.Time `json:"date"`
 	Count int64     `json:"count"`
+}
+
+type VComment struct {
+	ID             int64     `json:"id"`
+	ParentId       int64     `json:"parent_id"`
+	UserId         int64     `json:"user_id"`
+	Nickname       string    `json:"nickname"`
+	Avatar         string    `json:"avatar"`
+	WebSite        string    `json:"web_site"`
+	ReplyUserId    int64     `json:"reply_user_id"`
+	CommentContent string    `json:"comment_content"`
+	TopicId        int64     `json:"topic_id"`
+	Type           int       `json:"type"`
+	ReplyNickname  string    `json:"reply_nickname"`
+	ReplyWebSite   string    `json:"reply_web_site"`
+	CreateTime     time.Time `json:"create_time"`
 }
