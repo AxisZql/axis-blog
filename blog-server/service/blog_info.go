@@ -6,6 +6,7 @@ import (
 	"blog-server/common/rediskey"
 	ctrl "blog-server/controllers"
 	"crypto/md5"
+	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
@@ -17,7 +18,92 @@ type BlogInfo struct {
 	ctrl.BlogInfo
 }
 
-func (b *BlogInfo) GetBlogHomeInfo(*gin.Context) {}
+type page struct {
+	PageCover string `json:"pageCover"`
+	ID        int64  `json:"id"`
+	PageName  string `json:"pageName"`
+	PageLabel string `json:"pageLabel"`
+}
+
+type webConfig struct {
+	WebsiteAvatar     string   `json:"websiteAvatar"`
+	WebsiteName       string   `json:"websiteName"`
+	WebsiteAuthor     string   `json:"websiteAuthor"`
+	WebsiteIntro      string   `json:"websiteIntro"`
+	WebsiteNotice     string   `json:"websiteNotice"`
+	WebsiteCreateTime string   `json:"websiteCreateTime"`
+	WebsiteRecordNo   string   `json:"websiteRecordNo"`
+	SocialLoginList   []string `json:"socialLoginList"`
+	SocialUrlList     []string `json:"socialUrlList"`
+	QQ                string   `json:"qq"`
+	Github            string   `json:"github"`
+	Gitee             string   `json:"gitee"`
+	TouristAvatar     string   `json:"touristAvatar"`
+	UserAvatar        string   `json:"userAvatar"`
+	IsCommentReview   int      `json:"isCommentReview"`
+	IsMessageReview   int      `json:"isMessageReview"`
+	IsEmailNotice     int      `json:"isEmailNotice"`
+	IsReward          int      `json:"isReward"`
+	WeiXinQRCode      string   `json:"weiXinQRCode"`
+	AlipayQRCode      string   `json:"alipayQRCode"`
+	IsChatRoom        int      `json:"isChatRoom"`
+	IsMusicPlayer     int      `json:"isMusicPlayer"`
+}
+
+type respBlogHomeInfo struct {
+	ArticleCount  int64     `json:"articleCount"`
+	CategoryCount int64     `json:"categoryCount"`
+	TagCount      int64     `json:"tagCount"`
+	ViewsCount    int64     `json:"viewsCount"`
+	WebsiteConfig webConfig `json:"websiteConfig"`
+	PageList      []page    `json:"pageList"`
+}
+
+func (b *BlogInfo) GetBlogHomeInfo(ctx *gin.Context) {
+	//文章数量
+	var articleCount int64
+	// 分类数量
+	var categoryCount int64
+	// 标签数量
+	var tagCount int64
+	// 获取网站配置
+	wConfig := common.TWebsiteConfig{}
+	db := common.GetGorm()
+	r1 := db.Model(&common.TArticle{}).Count(&articleCount)
+	r2 := db.Model(&common.TCategory{}).Count(&categoryCount)
+	r3 := db.Model(&common.TTag{}).Count(&tagCount)
+	r4 := db.Model(&common.TWebsiteConfig{}).First(&wConfig)
+	if r1.Error != nil || r2.Error != nil || r3.Error != nil || r4.Error != nil {
+		logger.Error(r1.Error.Error() + "|||" + r2.Error.Error() + "|||" + r3.Error.Error() + "|||" + r4.Error.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	redisClient := common.GetRedis()
+	viewsCount, err := redisClient.Get(rediskey.BlogViewsCount).Int64()
+	if err != nil && err != redis.Nil {
+		logger.Error(err.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	pageList := make([]page, 0)
+	r5 := db.Model(&common.TPage{}).Find(&pageList)
+	if r5.Error != nil {
+		logger.Error(r5.Error.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	data := respBlogHomeInfo{}
+	data.ArticleCount = articleCount
+	data.CategoryCount = categoryCount
+	data.TagCount = tagCount
+	data.ViewsCount = viewsCount
+	w := webConfig{}
+	_ = json.Unmarshal([]byte(wConfig.Config), &w)
+	data.WebsiteConfig = w
+	data.PageList = pageList
+	Response(ctx, errorcode.Success, data, true, "操作成功")
+
+}
 
 type CategoryDto struct {
 	Id           int64  `json:"id"`
