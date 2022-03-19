@@ -10,7 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
 	"gorm.io/gorm"
-	"strconv"
 	"time"
 )
 
@@ -171,7 +170,7 @@ func (b *BlogInfo) Report(ctx *gin.Context) {
 	// 如果是新访客
 	if !exist {
 		redisClient := common.GetRedis()
-		result, err := redisClient.HGet(rediskey.VisitorArea, ipSource.Data.Province).Result()
+		result, err := redisClient.HGet(rediskey.VisitorArea, ipSource.Data.Province).Int64()
 		if err != nil && err != redis.Nil {
 			logger.Error(err.Error())
 			Response(ctx, errorcode.Fail, nil, false, "系统异常")
@@ -185,7 +184,7 @@ func (b *BlogInfo) Report(ctx *gin.Context) {
 				return
 			}
 		} else {
-			b, _ := strconv.Atoi(result)
+			b := result + 1
 			err = redisClient.HSet(rediskey.VisitorArea, ipSource.Data.Province, b).Err()
 			if err != nil {
 				logger.Error(err.Error())
