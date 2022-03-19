@@ -103,7 +103,7 @@ func (l *Login) Login(ctx *gin.Context) {
 		Duration: rediskey.ExpireUserLike,
 		Fun: func() (interface{}, error) {
 			var tLike = &common.TLike{}
-			ok, err = curd.Select(tLike, "user_id = ?", user.ID)
+			ok, err = curd.Select(tLike, "user_id = ?", userInfo.ID)
 			if err != nil {
 				return nil, err
 			} else if !ok {
@@ -154,7 +154,7 @@ func (l *Login) Login(ctx *gin.Context) {
 	data.UserInfoId = user.UserInfoId
 	data.Username = user.Username
 
-	_session.Values["userid"] = user.ID
+	_session.Values["userid"] = userInfo.ID
 	_session.Values["login_time"] = time.Now().Unix()
 	err = _session.Save(ctx.Request, ctx.Writer)
 	if err != nil {
