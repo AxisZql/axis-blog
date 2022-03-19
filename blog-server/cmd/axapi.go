@@ -95,7 +95,7 @@ func Routers(r *gin.Engine) {
 		home.GET("/talks", talk.ListHomeTalks) //查看首页说说
 	}
 
-	r.GET("/admin", blogInfo.GetBlogBackInfo) //查询后台信息
+	r.GET("/admin", ctrl.Auth(), blogInfo.GetBlogBackInfo) //查询后台信息
 	users.Use()
 	{
 		users.GET("/code", userAuth.SendEmailCode)       //发送邮箱验证码

@@ -5,6 +5,7 @@ import (
 	"blog-server/common/errorcode"
 	ctrl "blog-server/controllers"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type Menu struct {
@@ -27,6 +28,11 @@ func (m *Menu) ListUserMenus(ctx *gin.Context) {
 	sql := "select * from v_user_menu where ?"
 	userMenu := make([]common.VUserMenu, 0)
 	rows, err := db.Raw(sql, userid).Rows()
+	if err != nil && err != gorm.ErrRecordNotFound {
+		logger.Error(err.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
 	for rows.Next() {
 		var t common.VUserMenu
 		_ = db.ScanRows(rows, &t)

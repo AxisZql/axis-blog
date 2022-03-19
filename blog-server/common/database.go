@@ -34,6 +34,21 @@ from t_user_role ur
          inner join t_role_menu rm
                     on ur.role_id = rm.role_id
          inner join t_menu m on rm.menu_id = m.id order by menu_id asc;`
+	// 类别文章数量视图
+	vCategoryCount = `
+     create view v_category_count as
+     select tc.id, tc.category_name, count(*) as count
+     from t_category tc,
+     t_article ta
+     where tc.id = ta.category_id
+     GROUP by tc.category_name, tc.id;`
+	// 统计每一天的文章数量
+	vArticleStatistics = `
+    CREATE VIEW v_article_statistics as
+    SELECT DATE(create_time) AS date, COUNT(*) AS count
+    FROM t_article
+    GROUP BY date
+    ORDER BY date desc ;`
 )
 
 var (
@@ -51,7 +66,7 @@ func InitDb() error {
 			log.New(os.Stdout, "\r\n", log.LstdFlags),
 			glog.Config{
 				SlowThreshold: time.Second,
-				LogLevel:      glog.Silent,
+				LogLevel:      glog.Info,
 				Colorful:      true,
 			},
 		),
@@ -87,7 +102,7 @@ func InitDb() error {
 func modelsInit() {
 	logger.Info("models initializing...")
 	t := time.Now()
-	e1 := db.AutoMigrate(&TArticle{}, &TCategory{}, &TTag{}, &TArticleTag{}, &TChatRecord{}, &TComment{}, &TFriendLink{},
+	e1 := db.AutoMigrate(&TArticle{}, &TLike{}, &TCategory{}, &TTag{}, &TArticleTag{}, &TChatRecord{}, &TComment{}, &TFriendLink{},
 		&TMenu{}, &TMessage{}, &TOperationLog{}, &TPage{}, &TPhoto{}, &TPhotoAlbum{}, &TResource{}, &TRole{}, &TRoleMenu{},
 		&TRoleResource{}, &TTalk{}, &TUniqueView{}, &TUserAuth{}, &TUserInfo{}, &TUserRole{}, &TWebsiteConfig{})
 	if e1 != nil {
@@ -101,6 +116,22 @@ func modelsInit() {
 	e2 = db.Exec(vUserMenu)
 	if e2.Error != nil {
 		panic(e2)
+	}
+	e3 := db.Exec("drop view v_category_count;")
+	if e3.Error != nil && !strings.Contains(e3.Error.Error(), "Unknown table") {
+		panic(e2)
+	}
+	e3 = db.Exec(vCategoryCount)
+	if e3.Error != nil {
+		panic(e3)
+	}
+	e4 := db.Exec("drop view v_article_statistics;")
+	if e4.Error != nil && !strings.Contains(e4.Error.Error(), "Unknown table") {
+		panic(e2)
+	}
+	e4 = db.Exec(vArticleStatistics)
+	if e4.Error != nil {
+		panic(4)
 	}
 	logger.Debug(fmt.Sprintf("models inited in:%s", time.Since(t)))
 }
