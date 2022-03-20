@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"github.com/go-redis/redis"
 	"golang.org/x/crypto/bcrypt"
+	"gopkg.in/gomail.v2"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"time"
 )
@@ -279,4 +281,40 @@ func ConvertCommentData(data []VComment) DoneCommentAddCount {
 		}
 	}
 	return DoneCommentAddCount{RecordList: list, Count: int64(len(list))}
+}
+
+//=========发送注册验证码邮件
+
+// GetRandStr 生成n位随机字符串验证码
+func GetRandStr(n int) (code string) {
+	chars := `ABCDEFGHIJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789`
+	charsLen := len(chars)
+	if n > 6 {
+		n = 6
+	}
+	rand.Seed(time.Now().UnixNano())
+	for i := 0; i < n; i++ {
+		randIndex := rand.Intn(charsLen)
+		code += chars[randIndex : randIndex+1]
+	}
+	return code
+}
+
+func SentCodeByEmail(code string, toUserEmail ...string) error {
+	mailTo := make([]string, 0) //收件人列表
+	mailTo = append(mailTo, toUserEmail...)
+	title := `AXIS-BLOG注册验证码`
+	body := fmt.Sprintf(`Hi👋,您的验证码为:「 <a>%v</a> 」,验证码有效时间为5分钟,请不要将验证码告诉他人喔😉`, code)
+
+	m := gomail.NewMessage()
+	m.SetHeader(`From`, Conf.Mail.Username)
+	m.SetHeader(`To`, mailTo...)
+	m.SetHeader(`Subject`, title)
+	m.SetBody(`text/html`, body)
+	err := gomail.NewDialer(Conf.Mail.Host, Conf.Mail.Port, Conf.Mail.Username, Conf.Mail.Password).DialAndSend(m)
+	if err != nil {
+		logger.Error(err.Error())
+		return err
+	}
+	return nil
 }
