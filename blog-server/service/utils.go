@@ -39,7 +39,7 @@ func Auth() gin.HandlerFunc {
 			Response(ctx, errorcode.Fail, nil, false, "系统异常")
 			return
 		}
-		userid := _session.Values["userid"]
+		userid := _session.Values["a_userid"]
 		b := _session.Values["login_time"]
 		if userid == nil || b == nil {
 			ctx.Abort()
