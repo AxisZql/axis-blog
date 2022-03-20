@@ -73,7 +73,7 @@ func (l *Login) Login(ctx *gin.Context) {
 
 	//=====登陆成功
 	userInfo := common.TUserInfo{}
-	ok, err = curd.Select(&userInfo, "id = ?", user.ID)
+	ok, err = curd.Select(&userInfo, "email = ?", user.Username)
 	if err != nil {
 		Response(ctx, errorcode.Fail, nil, false, "系统异常")
 		return
@@ -148,13 +148,14 @@ func (l *Login) Login(ctx *gin.Context) {
 	data.Intro = userInfo.Intro
 	data.IpAddress = user.IpAddress
 	data.IpSource = user.IpSource
+	data.Avatar = userInfo.Avatar
 	data.LastLoginTime = user.LastLoginTime.String()
 	data.LoginType = user.LoginType
 	data.Nickname = userInfo.Nickname
 	data.UserInfoId = user.UserInfoId
 	data.Username = user.Username
 
-	_session.Values["userid"] = userInfo.ID
+	_session.Values["a_userid"] = user.ID
 	_session.Values["login_time"] = time.Now().Unix()
 	err = _session.Save(ctx.Request, ctx.Writer)
 	if err != nil {
@@ -167,5 +168,10 @@ func (l *Login) Login(ctx *gin.Context) {
 }
 
 func (l *Login) LoginOut(ctx *gin.Context) {
-
+	_session, _ := Store.Get(ctx.Request, "CurUser")
+	for key, _ := range _session.Values {
+		delete(_session.Values, key)
+	}
+	_ = _session.Save(ctx.Request, ctx.Writer)
+	Response(ctx, errorcode.Success, nil, true, "操作成功")
 }

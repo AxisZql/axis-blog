@@ -23,11 +23,22 @@ func (m *Menu) ListUserMenus(ctx *gin.Context) {
 		Response(ctx, errorcode.Fail, nil, false, "系统异常")
 		return
 	}
-	userid := _session.Values["userid"]
+	userid := _session.Values["a_userid"]
 	db := common.GetGorm()
-	sql := "select * from v_user_menu where ?"
+	userAuth := common.TUserAuth{}
+	r := db.Where("id = ?", userid).First(&userAuth)
+	if r.Error != nil && r.Error != gorm.ErrRecordNotFound {
+		logger.Error(r.Error.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	if r.Error != nil {
+		Response(ctx, errorcode.UsernameNotExist, nil, false, "用户名不存在")
+		return
+	}
+	sql := "select * from v_user_menu where user_id = ?"
 	userMenu := make([]common.VUserMenu, 0)
-	rows, err := db.Raw(sql, userid).Rows()
+	rows, err := db.Raw(sql, userAuth.UserInfoId).Rows()
 	if err != nil && err != gorm.ErrRecordNotFound {
 		logger.Error(err.Error())
 		Response(ctx, errorcode.Fail, nil, false, "系统异常")

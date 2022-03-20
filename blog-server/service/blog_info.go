@@ -101,6 +101,12 @@ func (b *BlogInfo) GetBlogHomeInfo(ctx *gin.Context) {
 	_ = json.Unmarshal([]byte(wConfig.Config), &w)
 	data.WebsiteConfig = w
 	data.PageList = pageList
+	// 将网站配置保存到redis中
+	if err := redisClient.Set(rediskey.WebsiteConfig, wConfig.Config, -1).Err(); err != nil {
+		logger.Error(err.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
 	Response(ctx, errorcode.Success, data, true, "操作成功")
 
 }

@@ -93,13 +93,13 @@ func Routers(r *gin.Engine) {
 	r.GET("/admin", ctrl.Auth(), blogInfo.GetBlogBackInfo) //查询后台信息
 	users.Use()
 	{
-		users.GET("/code", userAuth.SendEmailCode)       //发送邮箱验证码
-		users.PUT("/password", userAuth.UpdatePassword)  //修改密码
-		users.POST("/oauth/weibo", userAuth.WeiboLogin)  //微博登陆
-		users.POST("/users/oauth/qq", userAuth.QQLogin)  //QQ登陆
-		users.PUT("/info", userInfo.UpdateUserInfo)      //更新用户信息
-		users.POST("/avatar", userInfo.UpdateUserAvatar) //更新用户头像
-		users.POST("/email", userInfo.SaveUserEmail)     //绑定用户邮箱
+		users.GET("/code", userAuth.SendEmailCode)                    //发送邮箱验证码
+		users.PUT("/password", ctrl.Auth(), userAuth.UpdatePassword)  //修改密码
+		users.POST("/oauth/weibo", userAuth.WeiboLogin)               //微博登陆
+		users.POST("/users/oauth/qq", userAuth.QQLogin)               //QQ登陆
+		users.PUT("/info", ctrl.Auth(), userInfo.UpdateUserInfo)      //更新用户信息
+		users.POST("/avatar", ctrl.Auth(), userInfo.UpdateUserAvatar) //更新用户头像
+		users.POST("/email", ctrl.Auth(), userInfo.SaveUserEmail)     //绑定用户邮箱
 	}
 
 	admin.Use(ctrl.Auth())

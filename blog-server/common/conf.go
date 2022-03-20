@@ -59,7 +59,7 @@ type Configure struct {
 
 	Mail struct {
 		Host     string `json:"host" remark:"邮箱服务器" must:"false"`
-		Port     string `json:"port" remark:"邮箱服务端口" must:"false"`
+		Port     int    `json:"port" remark:"邮箱服务端口" must:"false"`
 		Username string `json:"username" remark:"邮箱用户名" must:"false"`
 		Password string `json:"password" remark:"邮箱授权码" must:"false"`
 	}

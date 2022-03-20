@@ -28,7 +28,7 @@ const UserLike string = "user_like:%v"
 const ExpireUserLike = 60 * time.Second
 
 // WebsiteConfig 网站配置
-const WebsiteConfig string = "website_config"
+const WebsiteConfig string = "axis_website_config"
 
 // UserArea 用户地区
 const UserArea string = "user_area"

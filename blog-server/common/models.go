@@ -243,7 +243,7 @@ type TUniqueView struct {
 type TUserAuth struct {
 	ID            int64     `json:"id,omitempty" remark:"自增id" gorm:"primary_key"`
 	UserInfoId    int64     `json:"user_info_id,omitempty" remark:"用户信息id" gorm:"type:bigint;not null"`
-	Username      string    `json:"username,omitempty" remark:"用户名" gorm:"type:varchar(50);unique;not null"`
+	Username      string    `json:"username,omitempty" remark:"用户名" gorm:"type:varchar(50);unique_index;not null"`
 	Password      string    `json:"password,omitempty" remark:"密码" gorm:"type:varchar(255);not null"`
 	LoginType     int       `json:"login_type,omitempty" remark:"登陆类型 1账号密码 2QQ 3微博" gorm:"type:tinyint;not null"`
 	LastLoginTime time.Time `json:"last_login_time,omitempty" remark:"上次登陆时间" gorm:"type:datetime"`
@@ -257,7 +257,7 @@ type TUserAuth struct {
 // TUserInfo 用户信息表
 type TUserInfo struct {
 	ID         int64     `json:"id,omitempty" remark:"自增id(这是userid)" gorm:"primary_key"`
-	Email      string    `json:"email,omitempty" remark:"邮箱号" gorm:"type:varchar(50)"`
+	Email      string    `json:"email,omitempty" remark:"邮箱号" gorm:"type:varchar(50);unique_index"`
 	Nickname   string    `json:"nickname,omitempty" remark:"用户昵称" gorm:"type:varchar(50);not null"`
 	Avatar     string    `json:"avatar,omitempty" remark:"用户头像" gorm:"type:varchar(255);not null"`
 	Intro      string    `json:"intro,omitempty" remark:"用户简介" gorm:"type:varchar(255)"`
