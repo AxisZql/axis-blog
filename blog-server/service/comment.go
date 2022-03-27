@@ -3,14 +3,11 @@ package service
 import (
 	"blog-server/common"
 	"blog-server/common/errorcode"
-	ctrl "blog-server/controllers"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
-type Comment struct {
-	ctrl.CommentHandle
-}
+type Comment struct{}
 
 //====分页获取评论
 

@@ -3,15 +3,12 @@ package service
 import (
 	"blog-server/common"
 	"blog-server/common/errorcode"
-	ctrl "blog-server/controllers"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"time"
 )
 
-type Article struct {
-	ctrl.ArticleHandle
-}
+type Article struct{}
 
 func (a *Article) ListArchives(ctx *gin.Context) {}
 

@@ -4,7 +4,6 @@ import (
 	"blog-server/common"
 	"blog-server/common/errorcode"
 	"blog-server/common/rediskey"
-	ctrl "blog-server/controllers"
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
@@ -14,9 +13,7 @@ import (
 	"time"
 )
 
-type BlogInfo struct {
-	ctrl.BlogInfo
-}
+type BlogInfo struct{}
 
 type page struct {
 	PageCover string `json:"pageCover"`

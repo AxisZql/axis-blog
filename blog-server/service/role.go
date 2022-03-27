@@ -1,13 +1,10 @@
 package service
 
 import (
-	ctrl "blog-server/controllers"
 	"github.com/gin-gonic/gin"
 )
 
-type Role struct {
-	ctrl.RoleHandle
-}
+type Role struct{}
 
 func (r *Role) ListUserRoles(*gin.Context)    {}
 func (r *Role) ListRoles(*gin.Context)        {}

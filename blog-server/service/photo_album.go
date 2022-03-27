@@ -1,13 +1,10 @@
 package service
 
 import (
-	ctrl "blog-server/controllers"
 	"github.com/gin-gonic/gin"
 )
 
-type PhotoAlbum struct {
-	ctrl.PhotoAlbumHandle
-}
+type PhotoAlbum struct{}
 
 func (p *PhotoAlbum) SavePhotoAlbumCover(*gin.Context)    {}
 func (p *PhotoAlbum) SaveOrUpdatePhotoAlbum(*gin.Context) {}

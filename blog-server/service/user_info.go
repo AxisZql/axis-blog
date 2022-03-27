@@ -4,7 +4,6 @@ import (
 	"blog-server/common"
 	"blog-server/common/errorcode"
 	"blog-server/common/rediskey"
-	ctrl "blog-server/controllers"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
@@ -13,9 +12,7 @@ import (
 	"time"
 )
 
-type UserInfo struct {
-	ctrl.UserInfoHandle
-}
+type UserInfo struct{}
 
 func (u *UserInfo) UpdateUserInfo(*gin.Context)   {}
 func (u *UserInfo) UpdateUserAvatar(*gin.Context) {}

@@ -1,13 +1,10 @@
 package service
 
 import (
-	ctrl "blog-server/controllers"
 	"github.com/gin-gonic/gin"
 )
 
-type Tag struct {
-	ctrl.TagHandle
-}
+type Tag struct{}
 
 func (t *Tag) ListTags(*gin.Context)        {}
 func (t *Tag) ListTagBack(*gin.Context)     {}

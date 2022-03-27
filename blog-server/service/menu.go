@@ -3,14 +3,11 @@ package service
 import (
 	"blog-server/common"
 	"blog-server/common/errorcode"
-	ctrl "blog-server/controllers"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
-type Menu struct {
-	ctrl.MenuHandle
-}
+type Menu struct{}
 
 func (m *Menu) ListMenus(*gin.Context)        {}
 func (m *Menu) SaveOrUpdateMenu(*gin.Context) {}

@@ -1,13 +1,10 @@
 package service
 
 import (
-	ctrl "blog-server/controllers"
 	"github.com/gin-gonic/gin"
 )
 
-type Category struct {
-	ctrl.CategoryHandle
-}
+type Category struct{}
 
 func (c *Category) ListCategories(*gin.Context)         {}
 func (c *Category) ListCategoriesBack(*gin.Context)     {}

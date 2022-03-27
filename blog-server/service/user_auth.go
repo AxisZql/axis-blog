@@ -4,7 +4,6 @@ import (
 	"blog-server/common"
 	"blog-server/common/errorcode"
 	"blog-server/common/rediskey"
-	ctrl "blog-server/controllers"
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -14,9 +13,7 @@ import (
 	"time"
 )
 
-type UserAuth struct {
-	ctrl.UserAuthHandle
-}
+type UserAuth struct{}
 
 //====== 通过QQ邮箱给新用户发送验证码
 
