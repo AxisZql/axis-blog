@@ -1,13 +1,10 @@
 package service
 
 import (
-	ctrl "blog-server/controllers"
 	"github.com/gin-gonic/gin"
 )
 
-type Photo struct {
-	ctrl.PhotoHandle
-}
+type Photo struct{}
 
 func (p *Photo) ListPhotos(*gin.Context)         {}
 func (p *Photo) UpdatePhoto(*gin.Context)        {}

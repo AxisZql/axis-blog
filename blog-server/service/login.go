@@ -4,16 +4,13 @@ import (
 	"blog-server/common"
 	"blog-server/common/errorcode"
 	"blog-server/common/rediskey"
-	ctrl "blog-server/controllers"
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"time"
 )
 
-type Login struct {
-	ctrl.LoginHandle
-}
+type Login struct{}
 
 type reqLogin struct {
 	Username string `form:"username" binding:"required"`

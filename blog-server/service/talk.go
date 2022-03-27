@@ -3,13 +3,10 @@ package service
 import (
 	"blog-server/common"
 	"blog-server/common/errorcode"
-	ctrl "blog-server/controllers"
 	"github.com/gin-gonic/gin"
 )
 
-type Talk struct {
-	ctrl.TalkHandle
-}
+type Talk struct{}
 
 func (t *Talk) ListHomeTalks(ctx *gin.Context) {
 	//查看最新10条说说

@@ -1,13 +1,10 @@
 package service
 
 import (
-	ctrl "blog-server/controllers"
 	"github.com/gin-gonic/gin"
 )
 
-type Resource struct {
-	ctrl.ResourceHandle
-}
+type Resource struct{}
 
 func (r *Resource) ListResources(*gin.Context)        {}
 func (r *Resource) DeleteResource(*gin.Context)       {}

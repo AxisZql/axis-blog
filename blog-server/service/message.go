@@ -1,13 +1,10 @@
 package service
 
 import (
-	ctrl "blog-server/controllers"
 	"github.com/gin-gonic/gin"
 )
 
-type Message struct {
-	ctrl.MessageHandle
-}
+type Message struct{}
 
 func (m *Message) SaveMessage(*gin.Context)         {}
 func (m *Message) ListMessage(*gin.Context)         {}
