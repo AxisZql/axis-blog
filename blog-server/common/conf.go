@@ -21,6 +21,7 @@ type Configure struct {
 	App struct {
 		Port       int64  `json:"port" remark:"http端口" must:"true"`
 		InitModels bool   `json:"init_models" remark:"是否初始化模型" must:"false"`
+		HostName   string `json:"host_name" remark:"部署域名" must:"false"`
 		Loglevel   string `json:"loglevel" remark:"日志级别" must:"true"`
 		Logfile    string `json:"logfile" remark:"日志文件" must:"true"`
 		AvatarDir  string `json:"avatar_dir" remark:"头像目录" must:"ture"`

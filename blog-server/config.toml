@@ -1,6 +1,7 @@
 [app]
 port = 8080
 init_models = "true"
+host_name = "http://localhost"
 loglevel = "debug"
 logfile = "./tmp/axis-blog/log.log"
 avatar_dir = "./static/avatar/"
