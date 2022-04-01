@@ -3,8 +3,10 @@ package service
 import (
 	"blog-server/common"
 	"blog-server/common/errorcode"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"strings"
 	"time"
 )
 
@@ -182,5 +184,68 @@ func (a *Article) GetArticleById(ctx *gin.Context) {
 
 }
 func (a *Article) ListArticleByCondition(ctx *gin.Context) {}
-func (a *Article) ListArticleBySearch(ctx *gin.Context)    {}
-func (a *Article) SaveArticleLike(ctx *gin.Context)        {}
+
+type reqListArticleBySearch struct {
+	Current  int    `form:"current" binding:"required"`
+	KeyWords string `form:"keywords" binding:"required"`
+}
+
+type articleSearch struct {
+	ID             int64  `json:"id"`
+	ArticleTitle   string `json:"articleTitle"`
+	ArticleContent string `json:"articleContent"`
+	IsDelete       int    `json:"isDelete"`
+	Status         int    `json:"status"`
+}
+
+func (a *Article) ListArticleBySearch(ctx *gin.Context) {
+	var form reqListArticleBySearch
+	if err := ctx.ShouldBind(&form); err != nil {
+		Response(ctx, errorcode.ValidError, nil, false, "参数验证失败")
+		return
+	}
+	db := common.GetGorm()
+	var articleList []articleSearch
+	r := db.Table("t_article").Where(fmt.Sprintf("article_title LIKE %q or article_content LIKE %q", "%"+form.KeyWords+"%", "%"+form.KeyWords+"%")).Find(&articleList)
+	if r.Error != nil && r.Error != gorm.ErrRecordNotFound {
+		logger.Error(r.Error.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	// 高亮搜索关键词
+	html := "<span style='color:#f47466'>%s</span>"
+	for i, val := range articleList {
+		t := strings.Split(val.ArticleTitle, form.KeyWords)
+		if len(t) >= 2 {
+			articleList[i].ArticleTitle = ""
+			count := 0
+			for _, val := range t {
+				articleList[i].ArticleTitle += val + fmt.Sprintf(html, form.KeyWords)
+				count++
+				if count+1 == len(t) {
+					break
+				}
+			}
+			articleList[i].ArticleTitle += t[len(t)-1]
+
+		}
+
+		t = strings.Split(val.ArticleContent, form.KeyWords)
+		if len(t) >= 2 {
+			articleList[i].ArticleContent = ""
+			count := 0
+			for _, val := range t {
+				articleList[i].ArticleContent += val + fmt.Sprintf(html, form.KeyWords)
+				count++
+				if count+1 == len(t) {
+					break
+				}
+			}
+			articleList[i].ArticleContent += t[len(t)-1]
+		}
+
+	}
+	Response(ctx, errorcode.Success, articleList, true, "操作成功")
+
+}
+func (a *Article) SaveArticleLike(ctx *gin.Context) {}
