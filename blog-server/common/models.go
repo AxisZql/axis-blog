@@ -12,28 +12,29 @@ import (
 
 // TArticle 文章表
 type TArticle struct {
-	ID             int64     `json:"id,omitempty" remark:"自增id" gorm:"primary_key"`
-	UserId         int64     `json:"user_id,omitempty" remark:"作者id" gorm:"type:bigint;not null"`
-	CategoryId     int64     `json:"category_id,omitempty" remark:"文章分类id" gorm:"type:bigint"`
-	ArticleCover   string    `json:"article_cover,omitempty" remark:"文章封面" gorm:"type:varchar(1024)"`
-	ArticleTitle   string    `json:"article_title,omitempty" remark:"标题" gorm:"type:varchar(50);not null"`
-	ArticleContent string    `json:"article_content,omitempty" remark:"内容" gorm:"type:longtext;not null"`
-	Type           int       `json:"type,omitempty" remark:"文章类型 1原创 2转载 3翻译" gorm:"type:tinyint;default:0;not null"`
-	OriginalUrl    string    `json:"original_url,omitempty" remark:"原文链接" gorm:"type:varchar(255)"`
-	ViewCount      int64     `json:"view_count,omitempty" remark:"文章访问量" gorm:"type:bigint;default:0;not null"`
-	LikeCount      int64     `json:"like_count,omitempty" remark:"文章点赞数" gorm:"type:bigint;default:0"`
-	IsTop          int       `json:"is_top,omitempty" remark:"是否置顶 0否 1是" gorm:"type:tinyint;default:0;not null"`
-	IsDelete       int       `json:"is_delete,omitempty" remark:"是否删除  0否 1是" gorm:"type:tinyint;default:0;not null"`
-	Status         int       `json:"status,omitempty" remark:"状态值 1公开 2私密 3评论可见" gorm:"type:tinyint;default:1;not null"`
-	CreateTime     time.Time `json:"create_time,omitempty" remark:"发表时间" gorm:"type:datetime;default:current_timestamp;not null"`
-	UpdateTime     time.Time `json:"update_time,omitempty" remark:"更新时间" gorm:"type:datetime;default:current_timestamp;not null"`
+	ID             int64  `json:"id,omitempty" remark:"自增id" gorm:"primary_key"`
+	UserId         int64  `json:"user_id,omitempty" remark:"作者id" gorm:"type:bigint;not null"`
+	CategoryId     int64  `json:"category_id,omitempty" remark:"文章分类id" gorm:"type:bigint"`
+	ArticleCover   string `json:"article_cover,omitempty" remark:"文章封面" gorm:"type:varchar(1024)"`
+	ArticleTitle   string `json:"article_title,omitempty" remark:"标题" gorm:"type:varchar(50);not null"`
+	ArticleContent string `json:"article_content,omitempty" remark:"内容" gorm:"type:longtext;not null"`
+	Type           int    `json:"type,omitempty" remark:"文章类型 1原创 2转载 3翻译" gorm:"type:tinyint;default:0;not null"`
+	OriginalUrl    string `json:"original_url,omitempty" remark:"原文链接" gorm:"type:varchar(255)"`
+	ViewCount      int64  `json:"view_count,omitempty" remark:"文章访问量" gorm:"type:bigint;default:0;not null"`
+	//LikeCount      int64     `json:"like_count,omitempty" remark:"文章点赞数" gorm:"type:bigint;default:0"`
+	IsTop      int       `json:"is_top,omitempty" remark:"是否置顶 0否 1是" gorm:"type:tinyint;default:0;not null"`
+	IsDelete   int       `json:"is_delete,omitempty" remark:"是否删除  0否 1是" gorm:"type:tinyint;default:0;not null"`
+	Status     int       `json:"status,omitempty" remark:"状态值 1公开 2私密 3评论可见" gorm:"type:tinyint;default:1;not null"`
+	CreateTime time.Time `json:"create_time,omitempty" remark:"发表时间" gorm:"type:datetime;default:current_timestamp;not null"`
+	UpdateTime time.Time `json:"update_time,omitempty" remark:"更新时间" gorm:"type:datetime;default:current_timestamp;not null"`
 }
 
 // TLike 点赞表 {"articleLikeSet":[],"commentLikeSet:[],"talkLikeSet":[]}
 type TLike struct {
-	ID       int64  `json:"id,omitempty" remark:"自增id" gorm:"primary_key"`
-	UserId   int64  `json:"user_id,omitempty" remark:"用户id" gorm:"type:bigint;not null"`
-	LikeItem string `json:"article_like,omitempty" remark:"用户点赞文章id，评论id，说说id数组" gorm:"type:text"`
+	ID     int64  `json:"id,omitempty" remark:"自增id" gorm:"primary_key"`
+	UserId int64  `json:"user_id,omitempty" remark:"用户id" gorm:"type:bigint;not null"`
+	Object string `json:"object,omitempty" remark:"表名" gorm:"type:varchar(32);not null"`
+	LikeId string `json:"article_like,omitempty" remark:"用户点赞文章id，评论id，说说id数组" gorm:"type:text"`
 }
 
 // TCategory 分类表

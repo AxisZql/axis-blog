@@ -4,7 +4,6 @@ import (
 	"blog-server/common"
 	"blog-server/common/errorcode"
 	"blog-server/common/rediskey"
-	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"time"
@@ -32,6 +31,12 @@ type RespLogin struct {
 	TalkLikeSet    []int64 `json:"talkLikeSet"`
 	UserInfoId     int64   `json:"userInfoId"`
 	Username       string  `json:"username"`
+}
+
+type UserLikeRecord struct {
+	ArticleLikeSet []int64 `json:"articleLikeSet"`
+	CommentLikeSet []int64 `json:"commentLikeSet"`
+	TalkLikeSet    []int64 `json:"talkLikeSet"`
 }
 
 func (l *Login) Login(ctx *gin.Context) {
@@ -96,17 +101,31 @@ func (l *Login) Login(ctx *gin.Context) {
 
 	cache := &common.CacheOptions{
 		Key:      fmt.Sprintf(rediskey.UserLike, userInfo.ID),
-		Receiver: new(common.TLike),
+		Receiver: new(UserLikeRecord),
 		Duration: rediskey.ExpireUserLike,
 		Fun: func() (interface{}, error) {
-			var tLike = &common.TLike{}
-			ok, err = curd.Select(tLike, "user_id = ?", userInfo.ID)
-			if err != nil {
+			db := common.GetGorm()
+			var likeRecord UserLikeRecord
+			var tLike1 []common.TLike
+			var tLike2 []common.TLike
+			var tLike3 []common.TLike
+			r1 := db.Model(&common.TLike{}).Where("user_id = ? and object = ?", userInfo.ID, "t_article").Find(&tLike1)
+			r1 = db.Model(&common.TLike{}).Where("user_id = ? and object = ?", userInfo.ID, "t_talk").Find(&tLike2)
+			r1 = db.Model(&common.TLike{}).Where("user_id = ? and object = ?", userInfo.ID, "t_comment").Find(&tLike3)
+			if r1.Error != nil {
 				return nil, err
-			} else if !ok {
-				return nil, nil
 			}
-			return tLike, nil
+			for _, val := range tLike1 {
+				likeRecord.ArticleLikeSet = append(likeRecord.ArticleLikeSet, val.ID)
+			}
+			for _, val := range tLike2 {
+				likeRecord.TalkLikeSet = append(likeRecord.TalkLikeSet, val.ID)
+			}
+			for _, val := range tLike3 {
+				likeRecord.CommentLikeSet = append(likeRecord.CommentLikeSet, val.ID)
+			}
+
+			return likeRecord, nil
 		},
 	}
 	receiver, e1 := cache.GetSet()
@@ -124,18 +143,7 @@ func (l *Login) Login(ctx *gin.Context) {
 		data.TalkLikeSet = []int64{}
 	} else {
 		//如果有记录
-		tl := struct {
-			ArticleLikeSet []int64 `json:"articleLikeSet"`
-			CommentLikeSet []int64 `json:"commentLikeSet"`
-			TalkLikeSet    []int64 `json:"talkLikeSet"`
-		}{}
-		r := receiver.(*common.TLike)
-		err = json.Unmarshal([]byte(r.LikeItem), &tl)
-		if err != nil {
-			logger.Error(err.Error())
-			Response(ctx, errorcode.Fail, nil, false, "系统异常")
-			return
-		}
+		tl := receiver.(*UserLikeRecord)
 		data.ArticleLikeSet = tl.ArticleLikeSet
 		data.CommentLikeSet = tl.CommentLikeSet
 		data.TalkLikeSet = tl.TalkLikeSet
