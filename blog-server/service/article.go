@@ -12,7 +12,39 @@ import (
 
 type Article struct{}
 
-func (a *Article) ListArchives(ctx *gin.Context) {}
+type reqListArchives struct {
+	Current int `form:"current" binding:"required"`
+}
+type archive struct {
+	ID           int64     `json:"id"`
+	ArticleTitle string    `json:"articleTitle"`
+	CreateTime   time.Time `json:"createTime"`
+}
+
+func (a *Article) ListArchives(ctx *gin.Context) {
+	var form reqListArchives
+	if err := ctx.ShouldBind(&form); err != nil {
+		Response(ctx, errorcode.ValidError, nil, false, "参数校验失败")
+		return
+	}
+	if form.Current <= 0 {
+		form.Current = 1
+	}
+	db := common.GetGorm()
+	var articleCount int64
+	var archiveList []archive
+	r1 := db.Model(&common.TArticle{}).Count(&articleCount)
+	r2 := db.Model(&common.TArticle{}).Limit(10).Offset((form.Current - 1) * 10).Order("create_time DESC").Find(&archiveList)
+	if r1.Error != nil || r2.Error != nil {
+		logger.Error(fmt.Sprintf("%v||%v", r1.Error.Error(), r2.Error.Error()))
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	data := make(map[string]interface{})
+	data["count"] = articleCount
+	data["recordList"] = archiveList
+	Response(ctx, errorcode.Success, data, true, "操作成功")
+}
 
 // ===分页查看首页文章
 type reqListArticles struct {
