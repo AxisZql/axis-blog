@@ -69,7 +69,7 @@ func Routers(r *gin.Engine) {
 	r.GET("/logout", login.LoginOut)                                      //用户注销
 	r.POST("/register", userAuth.Register)                                //用户注册
 	r.GET("/talks", talk.ListTalks)                                       //查看说说列表
-	r.GET("/talk/:talkId", talk.GetTalkById)                              //根据id查看说说
+	r.GET("/talks/:talkId", talk.GetTalkById)                             //根据id查看说说
 	r.POST("/talks/:talkId/like", talk.SaveTalkLike)                      //点赞说说
 	r.GET("/tags", tag.ListTags)                                          //查询标签列表
 	r.GET("/photos/albums", photoAlbum.ListPhotoAlbum)                    //获取相册列表
