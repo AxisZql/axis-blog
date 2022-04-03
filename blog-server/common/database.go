@@ -51,8 +51,8 @@ from t_user_role ur
     ORDER BY date desc ;`
 	// 文章信息视图
 	vArticleInfo = `
-    create view v_article_info as 
-          SELECT a.id,
+    create view v_article_info as
+SELECT a.id,
        article_cover,
        article_title,
        article_content,
@@ -65,25 +65,31 @@ from t_user_role ur
        original_url,
        a.create_time,
        a.update_time
-FROM (SELECT id,
+FROM (SELECT t_article.id,
              article_cover,
              article_title,
              article_content,
              type,
              is_top,
              view_count,
-             like_count,
+             tc.like_count,
              original_url,
              create_time,
              update_time,
              category_id
       FROM t_article
+               left join (select COUNT(*) as like_count, t_article.id
+                          from t_like,
+                               t_article
+                          where t_like.like_id = t_article.id
+                            and t_like.object = 't_article'
+                          GROUP BY t_article.id) as tc on tc.id = t_article.id
       WHERE is_delete = 0
         AND status = 1
       ORDER BY is_top DESC
      ) a
          inner JOIN t_category c ON a.category_id = c.id
-ORDER BY a.is_top DESC,a.update_time DESC ,a.create_time  DESC;`
+ORDER BY a.is_top DESC, a.update_time DESC, a.create_time DESC;`
 	// 评论视图
 	vComment = `
     create view v_comment as 
@@ -108,6 +114,30 @@ from (select tc.id,
                    on tu2.id = ans.reply_user_id
 where is_review = 1
   and is_delete = 0;`
+	// 说说视图
+	vTalkInfo = `
+create view v_talk_info as 
+select t1.*, lc.like_count, lco.comment_count
+from (select  tt.*,avatar,nickname
+      from t_user_info tu
+               join t_talk tt on tu.id = tt.user_id)
+         as t1
+         left join
+
+     (select count(*) as like_count, t_talk.id
+      from t_talk,
+           t_like
+      where t_like.like_id = t_talk.id
+        and t_like.object = 't_talk' group by t_talk.id) as lc on t1.id = lc.id
+         left join
+
+
+     (select count(*) as comment_count, t_talk.id
+      from t_comment,
+           t_talk
+      where t_comment.topic_id = t_talk.id
+        and t_comment.type = 3 group by t_talk.id) lco on t1.id = lco.id;
+`
 )
 
 var (
@@ -207,6 +237,14 @@ func modelsInit() {
 	e7 = db.Exec(vComment)
 	if e7.Error != nil {
 		panic(e7)
+	}
+	e8 := db.Exec("drop view v_talk_info")
+	if e8.Error != nil && !strings.Contains(e8.Error.Error(), "Unknown table") {
+		panic(e8)
+	}
+	e8 = db.Exec(vTalkInfo)
+	if e8.Error != nil {
+		panic(e8)
 	}
 	logger.Debug(fmt.Sprintf("models inited in:%s", time.Since(t)))
 }
