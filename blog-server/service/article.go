@@ -3,9 +3,12 @@ package service
 import (
 	"blog-server/common"
 	"blog-server/common/errorcode"
+	"crypto/md5"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"io/ioutil"
+	"mime/multipart"
 	"strings"
 	"time"
 )
@@ -110,13 +113,321 @@ func (a *Article) ListArticles(ctx *gin.Context) {
 	return
 
 }
-func (a *Article) ListArticleBack(ctx *gin.Context)     {}
-func (a *Article) SaveOrUpdateArticle(ctx *gin.Context) {}
+
+type reqListArticleBack struct {
+	Current    int    `form:"current"`
+	Size       int    `form:"size"`
+	Keywords   string `form:"keywords"`
+	CategoryId int64  `form:"categoryId"`
+	Status     int    `form:"status"`
+	TagId      int64  `form:"tagId"`
+	Type       int    `form:"type"`
+	IsDelete   int    `form:"isDelete"`
+}
+type listArticleBackInfo struct {
+	ID           int64     `json:"id"`
+	ArticleCover string    `json:"articleCover"`
+	ArticleTitle string    `json:"articleTitle"`
+	CategoryName string    `json:"categoryName"`
+	CategoryId   int64     `json:"categoryId"`
+	IsDelete     int       `json:"isDelete"`
+	IsTop        int       `json:"isTop"`
+	LikeCount    int64     `json:"likeCount"`
+	Status       int       `json:"status"`
+	CreateTime   time.Time `json:"createTime"`
+	Type         int       `json:"type"`
+	ViewsCount   int64     `json:"viewsCount"`
+	TagDTOList   []struct {
+		ID      int64  `json:"id"`
+		TagName string `json:"tagName"`
+	} `json:"tagDTOList"`
+}
+
+func (a *Article) ListArticleBack(ctx *gin.Context) {
+	var form reqListArticleBack
+	if err := ctx.ShouldBind(&form); err != nil {
+		Response(ctx, errorcode.ValidError, nil, false, "参数校验失败")
+		return
+	}
+	if form.Current <= 0 || form.Size <= 0 {
+		form.Current = 1
+		form.Size = 10
+	}
+	db := common.GetGorm()
+	var aTagList []common.TArticleTag
+	var aIdList []int64
+	te := false
+	if form.TagId != 0 {
+		te = true
+		r1 := db.Where("tag_id = ?", form.TagId).Find(&aTagList)
+		if r1.Error != nil {
+			logger.Error(r1.Error.Error())
+			Response(ctx, errorcode.Fail, nil, false, "系统异常")
+			return
+		}
+		for _, val := range aTagList {
+			aIdList = append(aIdList, val.ArticleId)
+		}
+	}
+	condition := ""
+	find := func(c int64, k string) {
+		if c != 0 {
+			condition += fmt.Sprintf("AND category_id = %d ", c)
+		}
+		if k != "" {
+			condition += fmt.Sprintf("AND article_content LIKE %q ", "%"+k+"%")
+		}
+	}
+	if form.Status != 0 || form.Type != 0 {
+		if form.Status != 0 && form.Type != 0 {
+			condition += fmt.Sprintf("status = %d AND type = %d ", form.Status, form.Type)
+			find(form.CategoryId, form.Keywords)
+		} else if form.Status != 0 {
+			condition += fmt.Sprintf("status = %d ", form.Status)
+			find(form.CategoryId, form.Keywords)
+		} else {
+			condition += fmt.Sprintf("type = %d ", form.Type)
+			find(form.CategoryId, form.Keywords)
+		}
+	} else {
+		find(form.CategoryId, form.Keywords)
+		_condition := strings.Split(condition, " ")
+		if len(_condition) >= 1 && _condition[0] == "AND" {
+			_condition = _condition[1:]
+		}
+		condition = strings.Join(_condition, " ")
+	}
+
+	var aInfoList []listArticleBackInfo
+	var count int64
+	if te {
+		if condition == "" {
+			condition = "id IN ? "
+		} else {
+			condition += "AND id IN ? "
+		}
+		condition += fmt.Sprintf("AND is_delete = %d ", form.IsDelete)
+		r2 := db.Model(&common.TArticle{}).Where(condition, aIdList).Count(&count)
+		r2 = db.Model(&common.TArticle{}).Where(condition, aIdList).Limit(form.Size).Offset((form.Current - 1) * form.Size).Find(&aInfoList)
+		if r2.Error != nil && r2.Error != gorm.ErrRecordNotFound {
+			logger.Error(r2.Error.Error())
+			Response(ctx, errorcode.Fail, nil, false, "系统异常")
+			return
+		}
+	} else {
+		if condition == "" {
+			condition += fmt.Sprintf("is_delete = %d ", form.IsDelete)
+		} else {
+			condition += fmt.Sprintf("AND is_delete = %d", form.IsDelete)
+		}
+		r2 := db.Model(&common.TArticle{}).Where(condition).Count(&count)
+		r2 = db.Model(&common.TArticle{}).Where(condition).Limit(form.Size).Offset((form.Current - 1) * form.Size).Find(&aInfoList)
+		if r2.Error != nil && r2.Error != gorm.ErrRecordNotFound {
+			logger.Error(r2.Error.Error())
+			Response(ctx, errorcode.Fail, nil, false, "系统异常")
+			return
+		}
+	}
+
+	for i, val := range aInfoList {
+		var at []common.TArticleTag
+		r3 := db.Where("article_id = ?", val.ID).Find(&at)
+		if r3.Error != nil && r3.Error != gorm.ErrRecordNotFound {
+			logger.Error(r3.Error.Error())
+			Response(ctx, errorcode.Fail, nil, false, "系统异常")
+			return
+		}
+		for _, v := range at {
+			var _tag struct {
+				ID      int64  `json:"id"`
+				TagName string `json:"tagName"`
+			}
+			r4 := db.Model(&common.TTag{}).Where("id = ?", v.TagId).Find(&_tag)
+			if r4.Error != nil && r4.Error != gorm.ErrRecordNotFound {
+				logger.Error(r4.Error.Error())
+				Response(ctx, errorcode.Fail, nil, false, "系统异常")
+				return
+			}
+			aInfoList[i].TagDTOList = append(aInfoList[i].TagDTOList, _tag)
+		}
+		var category common.TCategory
+		r4 := db.Model(&common.TCategory{}).Where("id = ?", val.CategoryId).Find(&category)
+		if r4.Error != nil && r4.Error != gorm.ErrRecordNotFound {
+			logger.Error(r4.Error.Error())
+			Response(ctx, errorcode.Fail, nil, false, "系统异常")
+			return
+		}
+		aInfoList[i].CategoryName = category.CategoryName
+	}
+	data := make(map[string]interface{})
+	data["count"] = count
+	data["recordList"] = aInfoList
+	Response(ctx, errorcode.Success, data, true, "操作成功")
+
+}
+
+type reqSaveOrUpdateArticle struct {
+	ID             int64    `json:"id" `
+	ArticleContent string   `json:"articleContent" binding:"required"`
+	ArticleCover   string   `json:"articleCover" `
+	ArticleTitle   string   `json:"articleTitle" binding:"required"`
+	CategoryName   string   `json:"categoryName" `
+	IsTop          int      `json:"isTop" `
+	OriginalUrl    string   `json:"originalUrl" `
+	Status         int      `json:"status" binding:"required"`
+	TagNameList    []string `json:"tagNameList"`
+	Type           int      `json:"type" binding:"required"`
+}
+
+func (a *Article) SaveOrUpdateArticle(ctx *gin.Context) {
+	var form reqSaveOrUpdateArticle
+	if err := ctx.ShouldBindJSON(&form); err != nil {
+		Response(ctx, errorcode.ValidError, nil, false, "参数校验失败")
+		return
+	}
+	db := common.GetGorm()
+	var category common.TCategory
+	r1 := db.Where("category_name = ?", form.CategoryName).First(&category)
+	if r1.Error != nil && r1.Error != gorm.ErrRecordNotFound {
+		logger.Error(r1.Error.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	if r1.Error == gorm.ErrRecordNotFound {
+		category.CategoryName = form.CategoryName
+		r1 = db.Model(&common.TCategory{}).Create(&category)
+		if r1.Error != nil {
+			logger.Error(r1.Error.Error())
+			Response(ctx, errorcode.Fail, nil, false, "系统异常")
+			return
+		}
+	}
+	var tagListId []int64
+	for _, val := range form.TagNameList {
+		var tag common.TTag
+		r2 := db.Where("tag_name = ?", val).First(&tag)
+		if r2.Error != nil && r2.Error != gorm.ErrRecordNotFound {
+			logger.Error(r2.Error.Error())
+			Response(ctx, errorcode.Fail, nil, false, "系统异常")
+			return
+		}
+		if r2.Error == gorm.ErrRecordNotFound {
+			tag.TagName = val
+			r2 = db.Model(&common.TTag{}).Create(&tag)
+			if r2.Error != nil {
+				logger.Error(r2.Error.Error())
+				Response(ctx, errorcode.Fail, nil, false, "系统异常")
+				return
+			}
+		}
+		tagListId = append(tagListId, tag.ID)
+	}
+	var article common.TArticle
+	r := db.Where("id = ?", form.ID).First(&article)
+	if r.Error != nil && r.Error != gorm.ErrRecordNotFound {
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	if r.Error == gorm.ErrRecordNotFound {
+		article = common.TArticle{
+			ArticleContent: form.ArticleContent,
+			ArticleCover:   form.ArticleCover,
+			ArticleTitle:   form.ArticleTitle,
+			CategoryId:     category.ID,
+			IsTop:          form.IsTop,
+			OriginalUrl:    form.OriginalUrl,
+			Status:         form.Status,
+			Type:           form.Type,
+		}
+		r3 := db.Model(&common.TArticle{}).Create(&article)
+		if r3.Error != nil {
+			logger.Error(r3.Error.Error())
+			Response(ctx, errorcode.Fail, nil, false, "系统异常")
+			return
+		}
+	} else {
+		article = common.TArticle{
+			ArticleContent: form.ArticleContent,
+			ArticleCover:   form.ArticleCover,
+			ArticleTitle:   form.ArticleTitle,
+			CategoryId:     category.ID,
+			IsTop:          form.IsTop,
+			OriginalUrl:    form.OriginalUrl,
+			Status:         form.Status,
+			Type:           form.Type,
+			UpdateTime:     time.Now(),
+		}
+		r3 := db.Model(&common.TArticle{}).Where("id = ?", form.ID).Updates(&article)
+		if r3.Error != nil {
+			logger.Error(r3.Error.Error())
+			Response(ctx, errorcode.Fail, nil, false, "系统异常")
+			return
+		}
+	}
+
+	for _, val := range tagListId {
+		var t common.TArticleTag
+		r4 := db.Where("article_id = ? and tag_id = ?", article.ID, val).First(&t)
+		if r4.Error == nil {
+			continue
+		} else if r4.Error == gorm.ErrRecordNotFound {
+			t.ArticleId = article.ID
+			t.TagId = val
+			r4 = db.Model(&common.TArticleTag{}).Create(&t)
+			if r4.Error != nil {
+				logger.Error(r4.Error.Error())
+				Response(ctx, errorcode.Fail, nil, false, "系统异常")
+				return
+			}
+		} else {
+			logger.Error(r4.Error.Error())
+			Response(ctx, errorcode.Fail, nil, false, "系统异常")
+			return
+		}
+	}
+	form.ID = article.ID
+	Response(ctx, errorcode.Success, form, true, "操作成功")
+}
 func (a *Article) UpdateArticleTop(ctx *gin.Context)    {}
 func (a *Article) UpdateArticleDelete(ctx *gin.Context) {}
-func (a *Article) SaveArticleImages(ctx *gin.Context)   {}
-func (a *Article) DeleteArticle(ctx *gin.Context)       {}
-func (a *Article) GetArticleBackById(ctx *gin.Context)  {}
+
+type reqSaveArticleImages struct {
+	File *multipart.FileHeader `form:"file" binding:"required"`
+}
+
+func (a *Article) SaveArticleImages(ctx *gin.Context) {
+	var form reqSaveArticleImages
+	if err := ctx.ShouldBind(&form); err != nil {
+		Response(ctx, errorcode.ValidError, nil, false, "参数校验失败")
+		return
+	}
+	f, _ := form.File.Open()
+	extendName := strings.Split(form.File.Filename, ".")
+	if len(extendName) != 2 && extendName[1] != "png" && extendName[1] != "gif" && extendName[1] != "jpg" {
+		Response(ctx, errorcode.ValidError, nil, false, "不支持的图片格式;仅支持png|gif|jpg格式")
+		return
+	}
+	defer f.Close()
+	fileData, err2 := ioutil.ReadAll(f)
+	if err2 != nil {
+		logger.Error(err2.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	fileMD5 := fmt.Sprintf("%x", md5.Sum(fileData))
+	fileName := fileMD5 + "." + extendName[1]
+	filePath := common.Conf.App.ArticleDir + fileName
+	err := ctx.SaveUploadedFile(form.File, filePath)
+	if err != nil {
+		logger.Error(err.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	imgUrl := fmt.Sprintf("%s:%d/farticles/%s", common.Conf.App.HostName, common.Conf.App.Port, fileName)
+	Response(ctx, errorcode.Fail, imgUrl, true, "操作成功")
+}
+func (a *Article) DeleteArticle(ctx *gin.Context)      {}
+func (a *Article) GetArticleBackById(ctx *gin.Context) {}
 
 //======= 根据文章id获取文章详情也
 type reqGetArticleById struct {
