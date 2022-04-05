@@ -63,6 +63,7 @@ func Routers(r *gin.Engine) {
 	users := r.Group("/users")
 
 	r.StaticFS("/avatar/", http.Dir("./static/avatar/"))
+	r.StaticFS("/farticles/", http.Dir("./static/articles/"))
 
 	r.GET("/", blogInfo.GetBlogHomeInfo)                                  //查看博客信息
 	r.POST("/login", login.Login)                                         //用户登陆

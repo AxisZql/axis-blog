@@ -24,7 +24,7 @@ type TArticle struct {
 	//LikeCount      int64     `json:"like_count,omitempty" remark:"文章点赞数" gorm:"type:bigint;default:0"`
 	IsTop      int       `json:"is_top,omitempty" remark:"是否置顶 0否 1是" gorm:"type:tinyint;default:0;not null"`
 	IsDelete   int       `json:"is_delete,omitempty" remark:"是否删除  0否 1是" gorm:"type:tinyint;default:0;not null"`
-	Status     int       `json:"status,omitempty" remark:"状态值 1公开 2私密 3评论可见" gorm:"type:tinyint;default:1;not null"`
+	Status     int       `json:"status,omitempty" remark:"状态值 1公开 2私密 3评论可见（草稿）" gorm:"type:tinyint;default:1;not null"`
 	CreateTime time.Time `json:"create_time,omitempty" remark:"发表时间" gorm:"type:datetime;default:current_timestamp;not null"`
 	UpdateTime time.Time `json:"update_time,omitempty" remark:"更新时间" gorm:"type:datetime;default:current_timestamp;not null"`
 }

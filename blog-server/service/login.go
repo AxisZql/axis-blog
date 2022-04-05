@@ -143,7 +143,7 @@ func (l *Login) Login(ctx *gin.Context) {
 		data.TalkLikeSet = []int64{}
 	} else {
 		//如果有记录
-		tl := receiver.(*UserLikeRecord)
+		tl := receiver.(UserLikeRecord)
 		data.ArticleLikeSet = tl.ArticleLikeSet
 		data.CommentLikeSet = tl.CommentLikeSet
 		data.TalkLikeSet = tl.TalkLikeSet
