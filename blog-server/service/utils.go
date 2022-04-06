@@ -50,7 +50,7 @@ func Auth() gin.HandlerFunc {
 		}
 		a := time.Now().Unix()
 		_b := b.(int64)
-		if a-_b >= 30*60 {
+		if a-_b >= 7*24*60 {
 			ctx.Abort()
 			delete(_session.Values, "CurUser")
 			_ = _session.Save(ctx.Request, ctx.Writer)

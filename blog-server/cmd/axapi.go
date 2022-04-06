@@ -64,6 +64,7 @@ func Routers(r *gin.Engine) {
 
 	r.StaticFS("/avatar/", http.Dir("./static/avatar/"))
 	r.StaticFS("/farticles/", http.Dir("./static/articles/"))
+	r.StaticFS("/fphotos/", http.Dir("./static/photos/"))
 
 	r.GET("/", blogInfo.GetBlogHomeInfo)                                  //查看博客信息
 	r.POST("/login", login.Login)                                         //用户登陆
@@ -107,75 +108,75 @@ func Routers(r *gin.Engine) {
 
 	admin.Use(ctrl.Auth())
 	{
-		admin.GET("/users/area", userAuth.ListUserAreas)                         //获取用户区域分布
-		admin.GET("/users", userAuth.ListUsers)                                  //查询用户后台列表
-		admin.PUT("/users/password", userAuth.UpdateAdminPassword)               //修改管理员密码
-		admin.PUT("/users/role")                                                 //修改用户角色
-		admin.PUT("/admin/users/disable", userInfo.UpdateUserDisable)            //修改用户禁用状态
-		admin.GET("/users/online", userInfo.ListOnlineUsers)                     //查看在线用户
-		admin.DELETE("/user/:userInfoId/online", userInfo.RemoveOnlineUser)      //下线用户
-		admin.POST("/talks/images", talk.SaveTalkImages)                         //上传说说图片
-		admin.POST("/talks", talk.SaveOrUpdateTalk)                              //保存或者更新说说
-		admin.DELETE("/talks", talk.DeleteTalks)                                 //删除说说
-		admin.GET("/talks", talk.ListBackTalks)                                  //查看后台说说
-		admin.GET("/talks/:talkId", talk.GetBackTalkById)                        //根据id查看后台说说
-		admin.GET("/tags", tag.ListTagBack)                                      //查询后台标签列表
-		admin.GET("/tags/search", tag.ListTagBySearch)                           //搜索文章标签
-		admin.POST("/tags", tag.SaveOrUpdateTag)                                 //添加或者修改标签
-		admin.DELETE("/tags", tag.DeleteTag)                                     //删除标签
-		admin.GET("/users/role", role.ListUserRoles)                             //查询用户角色选项
-		admin.GET("/roles", role.ListRoles)                                      //查询角色列表
-		admin.POST("/role", role.SaveOrUpdateRole)                               //保存或更新角色
-		admin.DELETE("/roles", role.DeleteRoles)                                 //删除角色
-		admin.GET("/resources", resource.ListResources)                          //查看资源列表
-		admin.DELETE("/resources/:resourceId", resource.DeleteResource)          //删除资源
-		admin.POST("/resources", resource.SaveOrUpdateResource)                  //新增或者修改资源
-		admin.GET("/role/resources", resource.ListResourceOption)                //查看角色资源选项
-		admin.GET("/photos", photo.ListPhotos)                                   //根据相册id获取照片列表
-		admin.PUT("/photos", photo.UpdatePhoto)                                  //更新照片信息
-		admin.POST("/photos", photo.SavePhoto)                                   //保存照片
-		admin.PUT("/photos/album", photo.UpdatePhotoAlbum)                       //移动照片相册
-		admin.PUT("/photos/delete", photo.UpdatePhotoDelete)                     //更新照片删除状态
-		admin.DELETE("/photos", photo.DeletePhotos)                              //删除照片
-		admin.GET("/:albumId/photos", photo.ListPhotoByAlbumId)                  //根据相册id查看照片类别
-		admin.POST("/photos/albums/cover", photoAlbum.SavePhotoAlbumCover)       //上传相册封面
-		admin.POST("/photos/albums", photoAlbum.SaveOrUpdatePhotoAlbum)          //保存或者更新相册
-		admin.GET("/photos/albums", photoAlbum.ListPhotoAlbumBack)               //查看后台相册列表
-		admin.GET("/photos/albums/info", photoAlbum.ListPhotoAlbumBackInfo)      //获取后台相册相关信息
-		admin.GET("/photos/:albumsId/info", photoAlbum.GetPhotoAlbumBackById)    //根据id获取后台相册信息
-		admin.DELETE("/photos/albums/:albumId", photoAlbum.DeletePhotoAlbumById) //根据相册id删除相册
-		admin.DELETE("/pages/:pageId", page.DeletePage)                          //根据页面id删除页面
-		admin.POST("/pages", page.SaveOrUpdatePage)                              //保存或者更新页面
-		admin.GET("/pages", page.ListPages)                                      //获取页面列表
-		admin.GET("/message", message.ListMessageBack)                           //查看后台留言列表
-		admin.POST("/message/review", message.UpdateMessageReview)               //审核留言
-		admin.DELETE("/messages", message.DeleteMessage)                         //删除留言
-		admin.GET("/menus", menus.ListMenus)                                     //查看菜单列表
-		admin.POST("/menus", menus.SaveOrUpdateMenu)                             //新增或者修改菜单
-		admin.DELETE("/menus/:menuId", menus.DeleteMenu)                         //删除菜单
-		admin.GET("/role/menus", menus.ListMenuOptions)                          //查看当前角色菜单
-		admin.GET("/user/menus", menus.ListUserMenus)                            //列出当前角色菜单
-		admin.GET("/operation/logs", loggerHandler.ListOperationLogs)            //查看操作日志
-		admin.DELETE("/operation/logs", loggerHandler.DeleteOperationLogs)       //删除操作日志
-		admin.GET("/links", friendLink.ListFriendLinksBack)                      //查看后台友链列表
-		admin.POST("/links", friendLink.SaveOrUpdateFriendLink)                  //保存或修改友链
-		admin.DELETE("/links", friendLink.DeleteFriendLink)                      //删除友链
-		admin.PUT("/comments/reviews", comment.UpdateCommentReview)              //评论审核
-		admin.DELETE("/comments", comment.DeleteComment)                         //删除评论
-		admin.GET("/comments", comment.ListCommentBack)                          //查询后台评论
-		admin.GET("/categories", category.ListCategoriesBack)                    //查看后台分类列表
-		admin.GET("/categories/search", category.ListCategoriesBySearch)         //搜索文章分类
-		admin.POST("/categories", category.SaveOrUpdateCategory)                 //添加或者修改分类
-		admin.DELETE("/categories", category.DeleteCategories)                   //删除分类
-		admin.POST("/config/images", blogInfo.SavePhotoAlbumCover)               //上传博客配置图片
-		admin.PUT("/website/config", blogInfo.UpdateWebsiteConfig)               //更新网站配置
-		admin.PUT("/about", blogInfo.UpdateAbout)                                //修改关于我信息
-		admin.GET("/articles", article.ListArticleBack)                          //查看后台文章
-		admin.POST("/articles", article.SaveOrUpdateArticle)                     //添加或者修改文章
-		admin.PUT("/articles/top", article.UpdateArticleTop)                     //修改文章置顶
-		admin.PUT("/articles", article.UpdateArticleDelete)                      //恢复或删除文章
-		admin.POST("/articles/images", article.SaveArticleImages)                //上传文章图片
-		admin.DELETE("/articles", article.DeleteArticle)                         //物理删除文章
+		admin.GET("/users/area", userAuth.ListUserAreas)                              //获取用户区域分布
+		admin.GET("/users", userAuth.ListUsers)                                       //查询用户后台列表
+		admin.PUT("/users/password", userAuth.UpdateAdminPassword)                    //修改管理员密码
+		admin.PUT("/users/role")                                                      //修改用户角色
+		admin.PUT("/admin/users/disable", userInfo.UpdateUserDisable)                 //修改用户禁用状态
+		admin.GET("/users/online", userInfo.ListOnlineUsers)                          //查看在线用户
+		admin.DELETE("/user/:userInfoId/online", userInfo.RemoveOnlineUser)           //下线用户
+		admin.POST("/talks/images", talk.SaveTalkImages)                              //上传说说图片
+		admin.POST("/talks", talk.SaveOrUpdateTalk)                                   //保存或者更新说说
+		admin.DELETE("/talks", talk.DeleteTalks)                                      //删除说说
+		admin.GET("/talks", talk.ListBackTalks)                                       //查看后台说说
+		admin.GET("/talks/:talkId", talk.GetBackTalkById)                             //根据id查看后台说说
+		admin.GET("/tags", tag.ListTagBack)                                           //查询后台标签列表
+		admin.GET("/tags/search", tag.ListTagBySearch)                                //搜索文章标签
+		admin.POST("/tags", tag.SaveOrUpdateTag)                                      //添加或者修改标签
+		admin.DELETE("/tags", tag.DeleteTag)                                          //删除标签
+		admin.GET("/users/role", role.ListUserRoles)                                  //查询用户角色选项
+		admin.GET("/roles", role.ListRoles)                                           //查询角色列表
+		admin.POST("/role", role.SaveOrUpdateRole)                                    //保存或更新角色
+		admin.DELETE("/roles", role.DeleteRoles)                                      //删除角色
+		admin.GET("/resources", resource.ListResources)                               //查看资源列表
+		admin.DELETE("/resources/:resourceId", resource.DeleteResource)               //删除资源
+		admin.POST("/resources", resource.SaveOrUpdateResource)                       //新增或者修改资源
+		admin.GET("/role/resources", resource.ListResourceOption)                     //查看角色资源选项
+		admin.GET("/photos", photo.ListPhotos)                                        //根据相册id获取照片列表
+		admin.PUT("/photos", photo.UpdatePhoto)                                       //更新照片信息
+		admin.POST("/photos", photo.SavePhoto)                                        //保存照片
+		admin.PUT("/photos/album", photo.UpdatePhotoAlbum)                            //移动照片相册
+		admin.PUT("/photos/delete", photo.UpdatePhotoDelete)                          //更新照片删除状态
+		admin.DELETE("/photos", photo.DeletePhotos)                                   //删除照片
+		admin.GET("/:albumId/photos", photo.ListPhotoByAlbumId)                       //根据相册id查看照片类别
+		admin.POST("/photos/albums/cover", photoAlbum.SavePhotoAlbumCover)            //上传相册封面
+		admin.POST("/photos/albums", photoAlbum.SaveOrUpdatePhotoAlbum)               //保存或者更新相册
+		admin.GET("/photos/albums", photoAlbum.ListPhotoAlbumBack)                    //查看后台相册列表
+		admin.GET("/photos/albums/info", photoAlbum.ListPhotoAlbumBackInfo)           //获取后台相册相关信息
+		admin.GET("/photos/albums/:albumsId/:info", photoAlbum.GetPhotoAlbumBackById) //根据id获取后台相册信息
+		admin.DELETE("/photos/albums/:albumId", photoAlbum.DeletePhotoAlbumById)      //根据相册id删除相册
+		admin.DELETE("/pages/:pageId", page.DeletePage)                               //根据页面id删除页面
+		admin.POST("/pages", page.SaveOrUpdatePage)                                   //保存或者更新页面
+		admin.GET("/pages", page.ListPages)                                           //获取页面列表
+		admin.GET("/message", message.ListMessageBack)                                //查看后台留言列表
+		admin.POST("/message/review", message.UpdateMessageReview)                    //审核留言
+		admin.DELETE("/messages", message.DeleteMessage)                              //删除留言
+		admin.GET("/menus", menus.ListMenus)                                          //查看菜单列表
+		admin.POST("/menus", menus.SaveOrUpdateMenu)                                  //新增或者修改菜单
+		admin.DELETE("/menus/:menuId", menus.DeleteMenu)                              //删除菜单
+		admin.GET("/role/menus", menus.ListMenuOptions)                               //查看当前角色菜单
+		admin.GET("/user/menus", menus.ListUserMenus)                                 //列出当前角色菜单
+		admin.GET("/operation/logs", loggerHandler.ListOperationLogs)                 //查看操作日志
+		admin.DELETE("/operation/logs", loggerHandler.DeleteOperationLogs)            //删除操作日志
+		admin.GET("/links", friendLink.ListFriendLinksBack)                           //查看后台友链列表
+		admin.POST("/links", friendLink.SaveOrUpdateFriendLink)                       //保存或修改友链
+		admin.DELETE("/links", friendLink.DeleteFriendLink)                           //删除友链
+		admin.PUT("/comments/reviews", comment.UpdateCommentReview)                   //评论审核
+		admin.DELETE("/comments", comment.DeleteComment)                              //删除评论
+		admin.GET("/comments", comment.ListCommentBack)                               //查询后台评论
+		admin.GET("/categories", category.ListCategoriesBack)                         //查看后台分类列表
+		admin.GET("/categories/search", category.ListCategoriesBySearch)              //搜索文章分类
+		admin.POST("/categories", category.SaveOrUpdateCategory)                      //添加或者修改分类
+		admin.DELETE("/categories", category.DeleteCategories)                        //删除分类
+		admin.POST("/config/images", blogInfo.SavePhotoAlbumCover)                    //上传博客配置图片
+		admin.PUT("/website/config", blogInfo.UpdateWebsiteConfig)                    //更新网站配置
+		admin.PUT("/about", blogInfo.UpdateAbout)                                     //修改关于我信息
+		admin.GET("/articles", article.ListArticleBack)                               //查看后台文章
+		admin.POST("/articles", article.SaveOrUpdateArticle)                          //添加或者修改文章
+		admin.PUT("/articles/top", article.UpdateArticleTop)                          //修改文章置顶
+		admin.PUT("/articles", article.UpdateArticleDelete)                           //恢复或删除文章
+		admin.POST("/articles/images", article.SaveArticleImages)                     //上传文章图片
+		admin.DELETE("/articles", article.DeleteArticle)                              //物理删除文章
 		admin.GET("/articles/:articleId", article.GetArticleBackById)
 
 	}
