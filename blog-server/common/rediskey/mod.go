@@ -40,7 +40,7 @@ const VisitorArea string = "visitor_area"
 const PageCover string = "page_cover"
 
 // ABOUT 关于我信息
-const ABOUT string = "about"
+const ABOUT string = "axis_about"
 
 // UniqueVisitor 访客数量
 const UniqueVisitor string = "unique_visitor"
