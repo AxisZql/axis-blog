@@ -65,6 +65,7 @@ func Routers(r *gin.Engine) {
 	r.StaticFS("/avatar/", http.Dir("./static/avatar/"))
 	r.StaticFS("/farticles/", http.Dir("./static/articles/"))
 	r.StaticFS("/fphotos/", http.Dir("./static/photos/"))
+	r.StaticFS("/ftalks/", http.Dir("./static/talks/"))
 
 	r.GET("/", blogInfo.GetBlogHomeInfo)                                  //查看博客信息
 	r.POST("/login", login.Login)                                         //用户登陆
