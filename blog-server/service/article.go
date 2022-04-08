@@ -289,7 +289,24 @@ func (a *Article) SaveOrUpdateArticle(ctx *gin.Context) {
 	if form.Status == 0 {
 		form.Status = 1
 	}
+	_session, _ := Store.Get(ctx.Request, "CurUser")
+	aid := _session.Values["a_userid"]
+	var ua common.TUserAuth
+	var ui common.TUserInfo
+
 	db := common.GetGorm()
+	r0 := db.Where("id = ?", aid).First(&ua)
+	if r0.Error != nil {
+		logger.Error(r0.Error.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	r0 = db.Where("id = ?", ua.UserInfoId).First(&ui)
+	if r0.Error != nil {
+		logger.Error(r0.Error.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
 	var category common.TCategory
 	r1 := db.Where("category_name = ?", form.CategoryName).First(&category)
 	if r1.Error != nil && r1.Error != gorm.ErrRecordNotFound {
@@ -338,6 +355,7 @@ func (a *Article) SaveOrUpdateArticle(ctx *gin.Context) {
 			ArticleCover:   form.ArticleCover,
 			ArticleTitle:   form.ArticleTitle,
 			CategoryId:     category.ID,
+			UserId:         ui.ID,
 			IsTop:          form.IsTop,
 			OriginalUrl:    form.OriginalUrl,
 			Status:         form.Status,
@@ -355,6 +373,7 @@ func (a *Article) SaveOrUpdateArticle(ctx *gin.Context) {
 			ArticleCover:   form.ArticleCover,
 			ArticleTitle:   form.ArticleTitle,
 			CategoryId:     category.ID,
+			UserId:         ui.ID,
 			IsTop:          form.IsTop,
 			OriginalUrl:    form.OriginalUrl,
 			Status:         form.Status,
