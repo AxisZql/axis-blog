@@ -20,14 +20,14 @@ type UserInfo struct{}
 
 type reqUpdateUserInfo struct {
 	Intro     string `json:"intro" binding:"required"`
-	LoginType int    `json:"loginType" binding:"required"`
+	LoginType int    `json:"loginType"`
 	Nickname  string `json:"nickname" binding:"required"`
 	WebSite   string `json:"webSite" binding:"required"`
 }
 
 func (u *UserInfo) UpdateUserInfo(ctx *gin.Context) {
 	var form reqUpdateUserInfo
-	if err := ctx.ShouldBind(&form); err != nil {
+	if err := ctx.ShouldBindJSON(&form); err != nil {
 		Response(ctx, errorcode.ValidError, nil, false, "参数校验失败")
 	}
 	db := common.GetGorm()

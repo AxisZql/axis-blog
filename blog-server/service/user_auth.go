@@ -205,7 +205,52 @@ func (user *UserAuth) Register(ctx *gin.Context) {
 	Response(ctx, errorcode.Success, nil, true, "操作成功")
 
 }
-func (user *UserAuth) UpdatePassword(*gin.Context)      {}
-func (user *UserAuth) UpdateAdminPassword(*gin.Context) {}
-func (user *UserAuth) WeiboLogin(*gin.Context)          {}
-func (user *UserAuth) QQLogin(*gin.Context)             {}
+func (user *UserAuth) UpdatePassword(*gin.Context) {}
+
+type reqUpdateAdminPassword struct {
+	ConfirmPassword string `json:"confirmPassword" binding:"required"`
+	NewPassword     string `json:"newPassword" binding:"required"`
+	OldPassword     string `json:"oldPassword" binding:"required"`
+}
+
+func (user *UserAuth) UpdateAdminPassword(ctx *gin.Context) {
+	var form reqUpdateAdminPassword
+	if err := ctx.ShouldBindJSON(&form); err != nil {
+		Response(ctx, errorcode.ValidError, nil, false, "参数校验失败")
+		return
+	}
+	db := common.GetGorm()
+	_session, _ := Store.Get(ctx.Request, "CurUser")
+	auid := _session.Values["a_userid"]
+	var au common.TUserAuth
+	r1 := db.Where("id = ?", auid).First(&au)
+	if r1.Error != nil {
+		logger.Error(r1.Error.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	if !common.VerifyPwd(au.Password, form.OldPassword) {
+		Response(ctx, errorcode.AuthorizedError, nil, false, "密码错误")
+		return
+	}
+	if form.NewPassword != form.ConfirmPassword {
+		Response(ctx, errorcode.ValidError, nil, false, "两次密码输入不一致")
+		return
+	}
+	pwd, err := common.EncryptionPwd(form.NewPassword)
+	if err != nil {
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	au.Password = pwd
+	au.UpdateTime = time.Now()
+	r1 = db.Save(&au)
+	if r1.Error != nil {
+		logger.Error(r1.Error.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	Response(ctx, errorcode.Success, nil, true, "操作成功")
+}
+func (user *UserAuth) WeiboLogin(*gin.Context) {}
+func (user *UserAuth) QQLogin(*gin.Context)    {}
