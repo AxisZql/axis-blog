@@ -107,7 +107,7 @@ func Routers(r *gin.Engine) {
 		users.POST("/email", ctrl.Auth(), userInfo.SaveUserEmail)     //绑定用户邮箱
 	}
 
-	admin.Use(ctrl.Auth())
+	admin.Use(ctrl.Auth(), ctrl.LogAopReq())
 	{
 		admin.GET("/users/area", userAuth.ListUserAreas)                              //获取用户区域分布
 		admin.GET("/users", userAuth.ListUsers)                                       //查询用户后台列表
