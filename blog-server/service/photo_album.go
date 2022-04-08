@@ -69,32 +69,32 @@ func (p *PhotoAlbum) SaveOrUpdatePhotoAlbum(ctx *gin.Context) {
 	}
 	db := common.GetGorm()
 	if form.ID != 0 {
-		var p common.TPhotoAlbum
-		r1 := db.Where("id = ?", form.ID).First(&p)
+		var pa common.TPhotoAlbum
+		r1 := db.Where("id = ?", form.ID).First(&pa)
 		if r1.Error != nil {
 			logger.Error(r1.Error.Error())
 			Response(ctx, errorcode.Fail, nil, false, "系统异常")
 			return
 		}
-		p.AlbumCover = form.AlbumCover
-		p.AlbumDesc = form.AlbumDesc
-		p.AlbumName = form.AlbumName
-		p.Status = form.Status
-		p.UpdateTime = time.Now()
-		r1 = db.Save(&p)
+		pa.AlbumCover = form.AlbumCover
+		pa.AlbumDesc = form.AlbumDesc
+		pa.AlbumName = form.AlbumName
+		pa.Status = form.Status
+		pa.UpdateTime = time.Now()
+		r1 = db.Save(&pa)
 		if r1.Error != nil {
 			logger.Error(r1.Error.Error())
 			Response(ctx, errorcode.Fail, nil, false, "系统异常")
 			return
 		}
 	} else {
-		p := common.TPhotoAlbum{
+		pa := common.TPhotoAlbum{
 			AlbumCover: form.AlbumCover,
 			AlbumDesc:  form.AlbumDesc,
 			AlbumName:  form.AlbumName,
 			Status:     form.Status,
 		}
-		r1 := db.Model(&common.TPhotoAlbum{}).Create(&p)
+		r1 := db.Model(&common.TPhotoAlbum{}).Create(&pa)
 		if r1.Error != nil {
 			logger.Error(r1.Error.Error())
 			Response(ctx, errorcode.Fail, nil, false, "系统异常")
