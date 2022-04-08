@@ -66,6 +66,7 @@ func Routers(r *gin.Engine) {
 	r.StaticFS("/farticles/", http.Dir("./static/articles/"))
 	r.StaticFS("/fphotos/", http.Dir("./static/photos/"))
 	r.StaticFS("/ftalks/", http.Dir("./static/talks/"))
+	r.StaticFS("/fconfig/", http.Dir("./static/config/"))
 
 	r.GET("/", blogInfo.GetBlogHomeInfo)                                  //查看博客信息
 	r.POST("/login", login.Login)                                         //用户登陆
@@ -169,7 +170,8 @@ func Routers(r *gin.Engine) {
 		admin.GET("/categories/search", category.ListCategoriesBySearch)              //搜索文章分类
 		admin.POST("/categories", category.SaveOrUpdateCategory)                      //添加或者修改分类
 		admin.DELETE("/categories", category.DeleteCategories)                        //删除分类
-		admin.POST("/config/images", blogInfo.SavePhotoAlbumCover)                    //上传博客配置图片
+		admin.POST("/config/images", blogInfo.SaveConfigPic)                          //上传博客配置图片
+		admin.GET("/website/config", blogInfo.GetWebSiteConfig)                       //获取网站配置
 		admin.PUT("/website/config", blogInfo.UpdateWebsiteConfig)                    //更新网站配置
 		admin.PUT("/about", blogInfo.UpdateAbout)                                     //修改关于我信息
 		admin.GET("/articles", article.ListArticleBack)                               //查看后台文章

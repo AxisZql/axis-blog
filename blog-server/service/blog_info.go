@@ -10,6 +10,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
 	"gorm.io/gorm"
+	"io/ioutil"
+	"mime/multipart"
+	"strings"
 	"time"
 )
 
@@ -230,12 +233,144 @@ func (b *BlogInfo) GetBlogBackInfo(ctx *gin.Context) {
 	Response(ctx, errorcode.Success, data, true, "操作成功")
 
 }
-func (b *BlogInfo) SavePhotoAlbumCover(*gin.Context) {}
-func (b *BlogInfo) UpdateWebsiteConfig(*gin.Context) {}
-func (b *BlogInfo) GetWebSiteConfig(*gin.Context)    {}
-func (b *BlogInfo) GetAbout(*gin.Context)            {}
-func (b *BlogInfo) UpdateAbout(*gin.Context)         {}
-func (b *BlogInfo) SendVoice(*gin.Context)           {}
+
+type reqSaveConfigPic struct {
+	File *multipart.FileHeader `form:"file" binding:"required"`
+}
+
+func (b *BlogInfo) SaveConfigPic(ctx *gin.Context) {
+	var form reqSaveConfigPic
+	if err := ctx.ShouldBind(&form); err != nil {
+		Response(ctx, errorcode.ValidError, nil, false, "参数校验失败")
+		return
+	}
+	f, _ := form.File.Open()
+	extendName := strings.Split(form.File.Filename, ".")
+	if len(extendName) != 2 && extendName[1] != "png" && extendName[1] != "gif" && extendName[1] != "jpg" {
+		Response(ctx, errorcode.ValidError, nil, false, "不支持的图片格式;仅支持png|gif|jpg格式")
+		return
+	}
+	defer f.Close()
+	fileData, err2 := ioutil.ReadAll(f)
+	if err2 != nil {
+		logger.Error(err2.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	fileMD5 := fmt.Sprintf("%x", md5.Sum(fileData))
+	fileName := fileMD5 + "." + extendName[1]
+	filePath := common.Conf.App.ConfigDir + fileName
+	err := ctx.SaveUploadedFile(form.File, filePath)
+	if err != nil {
+		logger.Error(err.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	imgUrl := fmt.Sprintf("%s:%d/fconfig/%s", common.Conf.App.HostName, common.Conf.App.Port, fileName)
+	Response(ctx, errorcode.Fail, imgUrl, true, "操作成功")
+}
+func (b *BlogInfo) UpdateWebsiteConfig(ctx *gin.Context) {
+	var form webConfig
+	if err := ctx.ShouldBindJSON(&form); err != nil {
+		Response(ctx, errorcode.ValidError, nil, false, "参数校验失败")
+		return
+	}
+	db := common.GetGorm()
+	var wf common.TWebsiteConfig
+	r1 := db.Model(&common.TWebsiteConfig{}).First(&wf)
+	if r1.Error != nil {
+		logger.Error(r1.Error.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	data, err := json.Marshal(form)
+	if err != nil {
+		logger.Error(err.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	wf.Config = string(data)
+	wf.UpdateTime = time.Now()
+	r1 = db.Save(&wf)
+	if r1.Error != nil {
+		logger.Error(r1.Error.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	redisClient := common.GetRedis()
+	e := redisClient.Set(rediskey.WebsiteConfig, data, -1).Err()
+	if e != nil {
+		logger.Error(e.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	Response(ctx, errorcode.Success, nil, true, "操作成功")
+}
+func (b *BlogInfo) GetWebSiteConfig(ctx *gin.Context) {
+	redisClient := common.GetRedis()
+	w, err := redisClient.Get(rediskey.WebsiteConfig).Result()
+	if err != nil && err != redis.Nil {
+		logger.Error(err.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	if err == redis.Nil {
+		db := common.GetGorm()
+		var wf common.TWebsiteConfig
+		r1 := db.Model(&common.TWebsiteConfig{}).First(&wf)
+		if r1.Error != nil {
+			logger.Error(r1.Error.Error())
+			Response(ctx, errorcode.Fail, nil, false, "系统异常")
+			return
+		}
+		e := redisClient.Set(rediskey.WebsiteConfig, wf.Config, -1).Err()
+		if e != nil {
+			logger.Error(e.Error())
+			Response(ctx, errorcode.Fail, nil, false, "系统异常")
+			return
+		}
+		w = wf.Config
+	}
+	var _w webConfig
+	err = json.Unmarshal([]byte(w), &_w)
+	if err != nil {
+		logger.Error(err.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	Response(ctx, errorcode.Success, _w, true, "操作成功")
+}
+func (b *BlogInfo) GetAbout(ctx *gin.Context) {
+	redisClient := common.GetRedis()
+	about, err := redisClient.Get(rediskey.ABOUT).Result()
+	if err != nil && err != redis.Nil {
+		logger.Error(err.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	Response(ctx, errorcode.Success, about, true, "操作成功")
+}
+
+type reqUpdateAbout struct {
+	AboutContent string `json:"aboutContent" binding:"required"`
+}
+
+func (b *BlogInfo) UpdateAbout(ctx *gin.Context) {
+	var form reqUpdateAbout
+	if err := ctx.ShouldBindJSON(&form); err != nil {
+		Response(ctx, errorcode.ValidError, nil, false, "参数校验失败")
+		return
+	}
+	redisClient := common.GetRedis()
+	err := redisClient.Set(rediskey.ABOUT, form.AboutContent, -1).Err()
+	if err != nil {
+		logger.Error(err.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	Response(ctx, errorcode.Success, nil, true, "操作成功")
+}
+func (b *BlogInfo) SendVoice(*gin.Context) {}
 
 // Report 报告唯一访客信息
 func (b *BlogInfo) Report(ctx *gin.Context) {
