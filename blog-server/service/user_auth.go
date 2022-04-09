@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
+	"gorm.io/gorm"
 	"strconv"
 	"strings"
 	"time"
@@ -199,6 +200,34 @@ func (user *UserAuth) Register(ctx *gin.Context) {
 	r3 := db.Create(&userAuth)
 	if r3.Error != nil {
 		logger.Error(r3.Error.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	var role common.TRole
+	r4 := db.Where("role_label = ?", "user").First(&role)
+	if r4.Error != nil && r4.Error != gorm.ErrRecordNotFound {
+		logger.Error(r4.Error.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	if r4.Error == gorm.ErrRecordNotFound {
+		role.RoleName = "用户"
+		role.RoleLabel = "user"
+		role.IsDisable = 0
+		r4 = db.Model(&common.TRole{}).Create(&role)
+		if r4.Error != nil {
+			logger.Error(r4.Error.Error())
+			Response(ctx, errorcode.Fail, nil, false, "系统异常")
+			return
+		}
+	}
+	userRole := common.TUserRole{
+		UserId: userInfo.ID,
+		RoleId: role.ID,
+	}
+	r5 := db.Model(&common.TUserRole{}).Create(&userRole)
+	if r5.Error != nil {
+		logger.Error(r5.Error.Error())
 		Response(ctx, errorcode.Fail, nil, false, "系统异常")
 		return
 	}
