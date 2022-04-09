@@ -156,7 +156,7 @@ func Routers(r *gin.Engine) {
 		admin.GET("/menus", menus.ListMenus)                                          //查看菜单列表
 		admin.POST("/menus", menus.SaveOrUpdateMenu)                                  //新增或者修改菜单
 		admin.DELETE("/menus/:menuId", menus.DeleteMenu)                              //删除菜单
-		admin.GET("/role/menus", menus.ListMenuOptions)                               //查看当前角色菜单
+		admin.GET("/role/menus", menus.ListMenuOptions)                               //所有菜单选项
 		admin.GET("/user/menus", menus.ListUserMenus)                                 //列出当前角色菜单
 		admin.GET("/operation/logs", loggerHandler.ListOperationLogs)                 //查看操作日志
 		admin.DELETE("/operation/logs", loggerHandler.DeleteOperationLogs)            //删除操作日志

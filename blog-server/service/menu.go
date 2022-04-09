@@ -3,16 +3,93 @@ package service
 import (
 	"blog-server/common"
 	"blog-server/common/errorcode"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"time"
 )
 
 type Menu struct{}
 
-func (m *Menu) ListMenus(*gin.Context)        {}
-func (m *Menu) SaveOrUpdateMenu(*gin.Context) {}
-func (m *Menu) DeleteMenu(*gin.Context)       {}
-func (m *Menu) ListMenuOptions(*gin.Context)  {}
+type reqListMenus struct {
+	Keywords string `json:"keywords"`
+}
+type menusListMenus struct {
+	Children   []menusListMenus `json:"children"`
+	Component  string           `json:"component"`
+	CreateTime time.Time        `json:"createTime"`
+	Icon       string           `json:"icon"`
+	ID         int64            `json:"id"`
+	IsDisable  int              `json:"isDisable"`
+	IsHidden   int              `json:"isHidden"`
+	OrderNum   int              `json:"orderNum"`
+	Path       string           `json:"path"`
+	Name       string           `json:"name"`
+}
+
+func (m *Menu) ListMenus(ctx *gin.Context) {
+	var form reqListMenus
+	if err := ctx.ShouldBind(&form); err != nil {
+		Response(ctx, errorcode.ValidError, nil, false, "参数校验失败")
+		return
+	}
+	db := common.GetGorm()
+	var mList []menusListMenus
+
+	r1 := db.Model(&common.TMenu{}).Where(fmt.Sprintf("isNull(parent_id) AND name LIKE %q", "%"+form.Keywords+"%")).Find(&mList)
+	if r1.Error != nil && r1.Error != gorm.ErrRecordNotFound {
+		logger.Error(r1.Error.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	for i, m := range mList {
+		var child []menusListMenus
+		r2 := db.Model(&common.TMenu{}).Where("parent_id = ?", m.ID).Find(&child)
+		if r2.Error != nil && r2.Error != gorm.ErrRecordNotFound {
+			logger.Error(r2.Error.Error())
+			Response(ctx, errorcode.Fail, nil, false, "系统异常")
+			return
+		}
+		mList[i].Children = child
+	}
+	Response(ctx, errorcode.Success, mList, true, "操作成功")
+
+}
+func (m *Menu) SaveOrUpdateMenu(ctx *gin.Context) {
+	Response(ctx, errorcode.Success, nil, true, "暂时不开放菜单修改和创建功能")
+}
+func (m *Menu) DeleteMenu(ctx *gin.Context) {
+	Response(ctx, errorcode.Success, nil, true, "暂时不开放菜单删除功能")
+}
+
+type menusOptions struct {
+	ID       int64          `json:"id"`
+	Name     string         `json:"label"`
+	Children []menusOptions `json:"children"`
+}
+
+func (m *Menu) ListMenuOptions(ctx *gin.Context) {
+	db := common.GetGorm()
+	var mList []menusOptions
+
+	r1 := db.Model(&common.TMenu{}).Where("isNull(parent_id)").Find(&mList)
+	if r1.Error != nil && r1.Error != gorm.ErrRecordNotFound {
+		logger.Error(r1.Error.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	for i, m := range mList {
+		var child []menusOptions
+		r2 := db.Model(&common.TMenu{}).Where("parent_id = ?", m.ID).Find(&child)
+		if r2.Error != nil && r2.Error != gorm.ErrRecordNotFound {
+			logger.Error(r2.Error.Error())
+			Response(ctx, errorcode.Fail, nil, false, "系统异常")
+			return
+		}
+		mList[i].Children = child
+	}
+	Response(ctx, errorcode.Success, mList, true, "操作成功")
+}
 
 func (m *Menu) ListUserMenus(ctx *gin.Context) {
 	_session, err := Store.Get(ctx.Request, "CurUser")
