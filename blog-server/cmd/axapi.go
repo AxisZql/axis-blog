@@ -113,10 +113,10 @@ func Routers(r *gin.Engine) {
 		admin.GET("/users/area", userAuth.ListUserAreas)                              //获取用户区域分布
 		admin.GET("/users", userAuth.ListUsers)                                       //查询用户后台列表
 		admin.PUT("/users/password", userAuth.UpdateAdminPassword)                    //修改管理员密码
-		admin.PUT("/users/role")                                                      //修改用户角色
-		admin.PUT("/admin/users/disable", userInfo.UpdateUserDisable)                 //修改用户禁用状态
+		admin.PUT("/users/role", userInfo.UpdateUserRole)                             //修改用户角色
+		admin.PUT("/users/disable", userInfo.UpdateUserDisable)                       //修改用户禁用状态
 		admin.GET("/users/online", userInfo.ListOnlineUsers)                          //查看在线用户
-		admin.DELETE("/user/:userInfoId/online", userInfo.RemoveOnlineUser)           //下线用户
+		admin.DELETE("/users/:userInfoId/:online", userInfo.RemoveOnlineUser)         //下线用户
 		admin.POST("/talks/images", talk.SaveTalkImages)                              //上传说说图片
 		admin.POST("/talks", talk.SaveOrUpdateTalk)                                   //保存或者更新说说
 		admin.DELETE("/talks", talk.DeleteTalks)                                      //删除说说
