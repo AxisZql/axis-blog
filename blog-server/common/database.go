@@ -138,6 +138,25 @@ from (select  tt.*,avatar,nickname
       where t_comment.topic_id = t_talk.id
         and t_comment.type = 3 group by t_talk.id) lco on t1.id = lco.id;
 `
+	vUserInfo = `
+		create view v_user_info as 
+select tua.*, tui.email, tui.nickname, tui.avatar, tui.intro, tui.web_site, tui.is_disable
+from (select id,
+             user_info_id,
+             username,
+             login_type,
+             last_login_time,
+             ip_source,
+             ip_address,
+             user_agent,
+             os,
+             browser,
+             create_time
+      from t_user_auth) tua
+         join
+     (select id, email, nickname, avatar, intro, web_site, is_disable
+      from t_user_info) tui on tua.user_info_id = tui.id
+`
 )
 
 var (
@@ -245,6 +264,14 @@ func modelsInit() {
 	e8 = db.Exec(vTalkInfo)
 	if e8.Error != nil {
 		panic(e8)
+	}
+	e9 := db.Exec("drop view v_user_info")
+	if e9.Error != nil && !strings.Contains(e9.Error.Error(), "Unknown table") {
+		panic(e9)
+	}
+	e9 = db.Exec(vUserInfo)
+	if e9.Error != nil {
+		panic(e9)
 	}
 	logger.Debug(fmt.Sprintf("models inited in:%s", time.Since(t)))
 }
