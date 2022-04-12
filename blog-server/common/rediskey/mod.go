@@ -44,3 +44,6 @@ const ABOUT string = "axis_about"
 
 // UniqueVisitor 访客数量
 const UniqueVisitor string = "unique_visitor"
+
+// OnlineUser 在线用户ID
+const OnlineUser string = "online_user"

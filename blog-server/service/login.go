@@ -6,6 +6,8 @@ import (
 	"blog-server/common/rediskey"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis"
+	"github.com/mssola/user_agent"
 	"time"
 )
 
@@ -90,6 +92,10 @@ func (l *Login) Login(ctx *gin.Context) {
 	user.UserAgent = ctx.GetHeader("User-Agent")
 	user.LastLoginTime = time.Now()
 	user.LoginType = 1
+	uaParse := user_agent.New(user.UserAgent)
+	user.OS = fmt.Sprintf("%v", uaParse.OS())
+	brows, _ := uaParse.Browser()
+	user.Browser = fmt.Sprintf("%v", brows)
 	ok, err = curd.Update(&common.TUserAuth{}, &user, "username = ?", user.Username)
 	if err != nil {
 		Response(ctx, errorcode.Fail, nil, false, "系统异常")
@@ -167,6 +173,14 @@ func (l *Login) Login(ctx *gin.Context) {
 		Response(ctx, errorcode.Fail, nil, false, "系统异常")
 		return
 	}
+	// 记录在线用户的auid
+	redisClient := common.GetRedis()
+	err = redisClient.SAdd(rediskey.OnlineUser, user.ID).Err()
+	if err != nil {
+		logger.Error(err.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
 	Response(ctx, errorcode.Success, &data, true, "操作成功")
 	return
 
@@ -174,6 +188,17 @@ func (l *Login) Login(ctx *gin.Context) {
 
 func (l *Login) LoginOut(ctx *gin.Context) {
 	_session, _ := Store.Get(ctx.Request, "CurUser")
+	auid := _session.Values["a_userid"]
+	if auid != nil {
+		// 下线用户
+		redisClient := common.GetRedis()
+		err := redisClient.SRem(rediskey.OnlineUser, auid.(int64)).Err()
+		if err != nil && err != redis.Nil {
+			logger.Error(err.Error())
+			Response(ctx, errorcode.Fail, nil, false, "系统异常")
+			return
+		}
+	}
 	for key, _ := range _session.Values {
 		delete(_session.Values, key)
 	}
