@@ -123,6 +123,7 @@ type TMessage struct {
 	IpAddress      string    `json:"ip_address,omitempty" remark:"ip地址" gorm:"type:varchar(50);not null"`
 	IpSource       string    `json:"ip_source,omitempty" remark:"ip来源" gorm:"type:varchar(255);not null"`
 	Speed          int       `json:"speed,omitempty" remark:"弹幕速度" gorm:"type:tinyint;not null"`
+	IsReview       int       `json:"is_review,omitempty" remark:"是否审核 0否 1是" gorm:"type:tinyint;default:1"`
 	CreateTime     time.Time `json:"create_time,omitempty" remark:"创建时间" gorm:"type:datetime;default:current_timestamp;not null"`
 	UpdateTime     time.Time `json:"update_time,omitempty" remark:"更新时间" gorm:"type:datetime;default:current_timestamp;not null"`
 }
