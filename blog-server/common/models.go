@@ -248,6 +248,8 @@ type TUserAuth struct {
 	Password      string    `json:"password,omitempty" remark:"密码" gorm:"type:varchar(255);not null"`
 	LoginType     int       `json:"login_type,omitempty" remark:"登陆类型 1账号密码 2QQ 3微博" gorm:"type:tinyint;not null"`
 	LastLoginTime time.Time `json:"last_login_time,omitempty" remark:"上次登陆时间" gorm:"type:datetime"`
+	OS            string    `json:"os,omitempty" remark:"操作系统类型" gorm:"type:varchar(32)"`
+	Browser       string    `json:"browser,omitempty" remark:"浏览器类型" gorm:"type:varchar(32)"`
 	UserAgent     string    `json:"user_agent,omitempty" remark:"浏览器请求头UserAgent包含操作系统和浏览器信息" gorm:"type:varchar(255);not null"`
 	IpAddress     string    `json:"ip_address,omitempty" remark:"ip地址" gorm:"type:varchar(50);not null"`
 	IpSource      string    `json:"ip_source,omitempty" remark:"ip来源" gorm:"type:varchar(255);not null"`
