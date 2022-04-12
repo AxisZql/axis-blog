@@ -150,7 +150,7 @@ func Routers(r *gin.Engine) {
 		admin.DELETE("/pages/:pageId", page.DeletePage)                               //根据页面id删除页面
 		admin.POST("/pages", page.SaveOrUpdatePage)                                   //保存或者更新页面
 		admin.GET("/pages", page.ListPages)                                           //获取页面列表
-		admin.GET("/message", message.ListMessageBack)                                //查看后台留言列表
+		admin.GET("/messages", message.ListMessageBack)                               //查看后台留言列表
 		admin.POST("/message/review", message.UpdateMessageReview)                    //审核留言
 		admin.DELETE("/messages", message.DeleteMessage)                              //删除留言
 		admin.GET("/menus", menus.ListMenus)                                          //查看菜单列表
@@ -163,7 +163,7 @@ func Routers(r *gin.Engine) {
 		admin.GET("/links", friendLink.ListFriendLinksBack)                           //查看后台友链列表
 		admin.POST("/links", friendLink.SaveOrUpdateFriendLink)                       //保存或修改友链
 		admin.DELETE("/links", friendLink.DeleteFriendLink)                           //删除友链
-		admin.PUT("/comments/reviews", comment.UpdateCommentReview)                   //评论审核
+		admin.PUT("/comments/review", comment.UpdateCommentReview)                    //评论审核
 		admin.DELETE("/comments", comment.DeleteComment)                              //删除评论
 		admin.GET("/comments", comment.ListCommentBack)                               //查询后台评论
 		admin.GET("/categories", category.ListCategoriesBack)                         //查看后台分类列表
