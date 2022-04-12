@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"mime/multipart"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -197,7 +198,191 @@ func (u *UserInfo) SaveUserEmail(ctx *gin.Context) {
 	_ = _session.Save(ctx.Request, ctx.Writer)
 	Response(ctx, errorcode.Success, nil, true, "操作成功")
 }
-func (u *UserInfo) UpdateUserRole(*gin.Context)    {}
-func (u *UserInfo) UpdateUserDisable(*gin.Context) {}
-func (u *UserInfo) ListOnlineUsers(*gin.Context)   {}
-func (u *UserInfo) RemoveOnlineUser(*gin.Context)  {}
+
+type reqUpdateUserRole struct {
+	Nickname   string  `json:"nickname" binding:"required"`
+	UserInfoId int64   `json:"userInfoId" binding:"required"`
+	RoleIdList []int64 `json:"roleIdList" binding:"required"`
+	ID         int64   `json:"id" binding:"required"`
+}
+
+func (u *UserInfo) UpdateUserRole(ctx *gin.Context) {
+	var form reqUpdateUserRole
+	if err := ctx.ShouldBindJSON(&form); err != nil {
+		Response(ctx, errorcode.ValidError, nil, false, "参数校验失败")
+		return
+	}
+	db := common.GetGorm()
+	var user common.TUserInfo
+	r1 := db.Model(&common.TUserInfo{}).Where("id = ?", form.UserInfoId).First(&user)
+	if r1.Error != nil && r1.Error != gorm.ErrRecordNotFound {
+		logger.Error(r1.Error.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	if r1.Error == gorm.ErrRecordNotFound {
+		Response(ctx, errorcode.UsernameNotExist, nil, false, "用户不存在")
+		return
+	}
+	user.Nickname = form.Nickname
+	user.UpdateTime = time.Now()
+	r1 = db.Save(&user)
+	if r1.Error != nil && r1.Error != gorm.ErrRecordNotFound {
+		logger.Error(r1.Error.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	for _, val := range form.RoleIdList {
+		r2 := db.Where("role_id = ? AND user_id = ?", val, form.UserInfoId).First(&common.TUserRole{})
+		if r2.Error != nil && r2.Error != gorm.ErrRecordNotFound {
+			logger.Error(r2.Error.Error())
+			Response(ctx, errorcode.Fail, nil, false, "系统异常")
+			return
+		}
+		if r2.Error == nil {
+			continue
+		}
+		t := common.TUserRole{
+			RoleId: val,
+			UserId: form.UserInfoId,
+		}
+		r3 := db.Model(&common.TUserRole{}).Create(&t)
+		if r3.Error != nil {
+			logger.Error(r3.Error.Error())
+			Response(ctx, errorcode.Fail, nil, false, "系统异常")
+			return
+		}
+	}
+	// 删除不属于该用户的权限标签
+	canUse := make(map[int64]bool)
+	for _, val := range form.RoleIdList {
+		canUse[val] = true
+	}
+	var turList []common.TUserRole
+	r4 := db.Where("user_id = ?", form.UserInfoId).Find(&turList)
+	if r4.Error != nil && r4.Error != gorm.ErrRecordNotFound {
+		logger.Error(r4.Error.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	for _, val := range turList {
+		if _, ok := canUse[val.RoleId]; ok {
+			continue
+		}
+		r5 := db.Where("id = ?", val.ID).Delete(&common.TUserRole{})
+		if r5.Error != nil && r5.Error != gorm.ErrRecordNotFound {
+			logger.Error(r5.Error.Error())
+			Response(ctx, errorcode.Fail, nil, false, "系统异常")
+			return
+		}
+	}
+	Response(ctx, errorcode.Success, nil, true, "操作成功")
+}
+
+type reqUpdateUserDisable struct {
+	ID        int64 `json:"id"`
+	IsDisable int   `json:"isDisable"`
+}
+
+func (u *UserInfo) UpdateUserDisable(ctx *gin.Context) {
+	var form reqUpdateUserDisable
+	if err := ctx.ShouldBindJSON(&form); err != nil {
+		Response(ctx, errorcode.ValidError, nil, false, "参数校验失败")
+		return
+	}
+	db := common.GetGorm()
+	var ui common.TUserInfo
+	r1 := db.Where("id = ?", form.ID).First(&ui)
+	if r1.Error != nil {
+		logger.Error(r1.Error.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	ui.IsDisable = form.IsDisable
+	ui.UpdateTime = time.Now()
+	r1 = db.Save(&ui)
+	if r1.Error != nil {
+		logger.Error(r1.Error.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	Response(ctx, errorcode.Success, nil, true, "操作成功")
+}
+
+type reqListOnlineUsers struct {
+	Current  int    `form:"current"`
+	Size     int    `form:"size"`
+	Keywords string `form:"keywords"`
+}
+
+func (u *UserInfo) ListOnlineUsers(ctx *gin.Context) {
+	var form reqListOnlineUsers
+	if err := ctx.ShouldBind(&form); err != nil {
+		Response(ctx, errorcode.ValidError, nil, false, "参数校验失败")
+		return
+	}
+	if form.Current <= 0 || form.Size <= 0 {
+		form.Current = 1
+		form.Size = 10
+	}
+	type UF struct {
+		Avatar        string    `json:"avatar"`
+		Browser       string    `json:"browser"`
+		IpAddress     string    `json:"ipAddress"`
+		IpSource      string    `json:"ipSource"`
+		LastLoginTime time.Time `json:"lastLoginTime"`
+		Nickname      string    `json:"nickname"`
+		Os            string    `json:"os"`
+		UserInfoId    int64     `json:"userInfoId"`
+	}
+	redisClient := common.GetRedis()
+	us, err := redisClient.SMembers(rediskey.OnlineUser).Result()
+	if err != nil {
+		logger.Error(err.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	//count := len(us)
+	var ufList []UF
+	uIdList := make([]int64, 0)
+	for _, val := range us {
+		t, _ := strconv.Atoi(val)
+		uIdList = append(uIdList, int64(t))
+	}
+	db := common.GetGorm()
+	r1 := db.Table("v_user_info").Where(fmt.Sprintf("id IN ? AND nickname LIKE %q", "%"+form.Keywords+"%"), uIdList).Find(&ufList)
+	if r1.Error != nil && r1.Error != gorm.ErrRecordNotFound {
+		logger.Error(r1.Error.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	data := make(map[string]interface{})
+	data["count"] = len(ufList)
+	data["recordList"] = ufList
+	Response(ctx, errorcode.Success, data, true, "操作成功")
+}
+
+type reqRemoveOnlineUser struct {
+	UserInfoId int64  `uri:"userInfoId" binding:"required"`
+	Path       string `uri:"online" binding:"required"`
+}
+
+func (u *UserInfo) RemoveOnlineUser(ctx *gin.Context) {
+	var form reqRemoveOnlineUser
+	if err := ctx.ShouldBindUri(&form); err != nil {
+		Response(ctx, errorcode.ValidError, nil, false, "参数校验失败")
+		return
+	}
+	if form.Path != "online" {
+		Response(ctx, errorcode.ValidError, nil, false, "参数校验失败")
+		return
+	}
+	redisClient := common.GetRedis()
+	err := redisClient.SRem(rediskey.OnlineUser, form.UserInfoId).Err()
+	if err != nil && err != redis.Nil {
+		logger.Error(err.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	Response(ctx, errorcode.Success, nil, true, "操作成功")
+}

@@ -100,8 +100,87 @@ func (user *UserAuth) ListUserAreas(ctx *gin.Context) {
 	Response(ctx, errorcode.ValidError, nil, false, "参数校验失败")
 }
 
-func (user *UserAuth) ListUsers(ctx *gin.Context) {
+type reqListUsers struct {
+	Current   int    `form:"current"`
+	Size      int    `form:"size"`
+	Keywords  string `form:"keywords"`
+	LoginType int    `form:"loginType"`
+}
 
+func (user *UserAuth) ListUsers(ctx *gin.Context) {
+	var form reqListUsers
+	if err := ctx.ShouldBind(&form); err != nil {
+		Response(ctx, errorcode.ValidError, nil, false, "参数校验失败")
+		return
+	}
+	db := common.GetGorm()
+	if form.Current <= 0 || form.Size <= 0 {
+		form.Current = 1
+		form.Size = 10
+	}
+	if form.LoginType == 0 {
+		form.LoginType = 1
+	}
+	var count int64
+	type RL struct {
+		ID       int64  `json:"id"`
+		RoleName string `json:"roleName"`
+	}
+	var userList []struct {
+		Avatar        string    `json:"avatar"`
+		CreateTime    time.Time `json:"createTime"`
+		ID            int64     `json:"id"`
+		IpAddress     string    `json:"ipAddress"`
+		IpSource      string    `json:"ipSource"`
+		IsDisable     int       `json:"isDisable"`
+		LastLoginTime time.Time `json:"lastLoginTime"`
+		Nickname      string    `json:"nickname"`
+		Status        int       `json:"status"`
+		UserInfoId    int64     `json:"userInfoId"`
+		RoleList      []RL      `json:"roleList"`
+	}
+	if form.Keywords == "" {
+		r1 := db.Table("v_user_info").Where("login_type = ?", form.LoginType).Count(&count)
+		r1 = db.Table("v_user_info").Where("login_type = ?", form.LoginType).Limit(form.Size).Offset((form.Current - 1) * form.Size).Find(&userList)
+		if r1.Error != nil && r1.Error != gorm.ErrRecordNotFound {
+			logger.Error(r1.Error.Error())
+			Response(ctx, errorcode.Fail, nil, false, "系统异常")
+			return
+		}
+	} else {
+		r1 := db.Table("v_user_info").Where(fmt.Sprintf("login_type = %d AND nickname LIKE %q", form.LoginType, "%"+form.Keywords+"%")).Count(&count)
+		r1 = db.Table("v_user_info").Where(fmt.Sprintf("login_type = %d AND nickname LIKE %q", form.LoginType, "%"+form.Keywords+"%")).Limit(form.Size).Offset((form.Current - 1) * form.Size).Find(&userList)
+		if r1.Error != nil && r1.Error != gorm.ErrRecordNotFound {
+			logger.Error(r1.Error.Error())
+			Response(ctx, errorcode.Fail, nil, false, "系统异常")
+			return
+		}
+	}
+	for i, u := range userList {
+		var tur []common.TUserRole
+		roleList := make([]RL, 0)
+		r2 := db.Model(&common.TUserRole{}).Where("user_id = ?", u.UserInfoId).Find(&tur)
+		if r2.Error != nil && r2.Error != gorm.ErrRecordNotFound {
+			logger.Error(r2.Error.Error())
+			Response(ctx, errorcode.Fail, nil, false, "系统异常")
+			return
+		}
+		for _, val := range tur {
+			var role RL
+			r3 := db.Model(&common.TRole{}).Where("id = ?", val.RoleId).Find(&role)
+			if r3.Error != nil && r3.Error != gorm.ErrRecordNotFound {
+				logger.Error(r3.Error.Error())
+				Response(ctx, errorcode.Fail, nil, false, "系统异常")
+				return
+			}
+			roleList = append(roleList, role)
+		}
+		userList[i].RoleList = roleList
+	}
+	data := make(map[string]interface{})
+	data["count"] = count
+	data["recordList"] = userList
+	Response(ctx, errorcode.Success, data, true, "操作成功")
 }
 
 //========新用户注册

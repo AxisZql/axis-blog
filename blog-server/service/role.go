@@ -13,7 +13,20 @@ import (
 
 type Role struct{}
 
-func (r *Role) ListUserRoles(*gin.Context) {}
+func (r *Role) ListUserRoles(ctx *gin.Context) {
+	db := common.GetGorm()
+	var roleList []struct {
+		ID       int64  `json:"id"`
+		RoleName string `json:"roleName"`
+	}
+	r1 := db.Model(&common.TRole{}).Find(&roleList)
+	if r1.Error != nil {
+		logger.Error(r1.Error.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	Response(ctx, errorcode.Success, roleList, true, "操作成功")
+}
 
 type reqListRoles struct {
 	Current  int    `form:"current"`

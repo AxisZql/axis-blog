@@ -3,13 +3,14 @@ package service
 import (
 	"blog-server/common"
 	"blog-server/common/errorcode"
+	"blog-server/common/rediskey"
 	"bytes"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis"
 	"io/ioutil"
 	"net/http"
 	"strings"
-	"time"
 )
 
 /*
@@ -53,15 +54,30 @@ func Auth() gin.HandlerFunc {
 			Response(ctx, errorcode.AuthorizedError, nil, false, "没有操作权限")
 			return
 		}
-		a := time.Now().Unix()
-		_b := b.(int64)
-		if a-_b >= 7*24*60 {
+		redisClient := common.GetRedis()
+		exist, err := redisClient.SIsMember(rediskey.OnlineUser, userid.(int64)).Result()
+		if err != nil && err != redis.Nil {
+			ctx.Abort()
+			logger.Error(err.Error())
+			Response(ctx, errorcode.Fail, nil, false, "系统异常")
+			return
+		}
+		if !exist {
 			ctx.Abort()
 			delete(_session.Values, "CurUser")
 			_ = _session.Save(ctx.Request, ctx.Writer)
-			Response(ctx, errorcode.ExpireLoginTime, nil, false, "登陆状态过期")
+			Response(ctx, errorcode.ExpireLoginTime, nil, false, "登陆状态过期(您已经下线)")
 			return
 		}
+		//a := time.Now().Unix()
+		//_b := b.(int64)
+		//if a-_b >= 7*24*60 {
+		//	ctx.Abort()
+		//	delete(_session.Values, "CurUser")
+		//	_ = _session.Save(ctx.Request, ctx.Writer)
+		//	Response(ctx, errorcode.ExpireLoginTime, nil, false, "登陆状态过期")
+		//	return
+		//}
 
 		ctx.Next()
 		// response
