@@ -1,12 +1,11 @@
 package common
 
 import (
-	"blog-server/common/rediskey"
 	"encoding/json"
 	"fmt"
-	"github.com/go-redis/redis"
 	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/gomail.v2"
+	"gorm.io/gorm"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -206,81 +205,13 @@ type DoneCommentAddCount struct {
 }
 
 func GetCommentLikeCountById(id int64) (int64, error) {
-	redisClient := GetRedis()
-	likeCount, err := redisClient.Get(fmt.Sprintf(rediskey.CommentLikeCount+"%d", id)).Int64()
-	if err != nil && err != redis.Nil {
-		logger.Error(err.Error())
-		return 0, nil
-	}
-	if err == redis.Nil {
-		err = redisClient.Set(fmt.Sprintf(rediskey.CommentLikeCount+"%d", id), 0, -1).Err()
-		if err != nil {
-			logger.Error(err.Error())
-			return 0, nil
-		}
+	db := GetGorm()
+	var likeCount int64
+	r1 := db.Model(&TLike{}).Where("object = ? AND like_id = ?", "t_comment", id).Count(&likeCount)
+	if r1.Error != nil && r1.Error != gorm.ErrRecordNotFound {
+		return 0, r1.Error
 	}
 	return likeCount, nil
-}
-
-func findReply(data []VComment, parentId int64) ([]replyDTO, []VComment) {
-	list := make([]replyDTO, 0)
-	for i := 0; i < len(data); i++ {
-		val := data[i]
-		if val.ParentId == parentId {
-			r := data[i+1:]
-			data = data[:i]
-			data = append(data, r...)
-			i--
-			likeCount, _ := GetCommentLikeCountById(val.ID)
-			t := replyDTO{
-				ID:             val.ID,
-				ParentId:       val.ParentId,
-				UserId:         val.UserId,
-				Nickname:       val.Nickname,
-				Avatar:         val.Avatar,
-				WebSite:        val.WebSite,
-				ReplyUserId:    val.ReplyUserId,
-				ReplyNickname:  val.ReplyNickname,
-				ReplyWebSite:   val.ReplyWebSite,
-				CommentContent: val.CommentContent,
-				LikeCount:      likeCount,
-				CreateTime:     val.CreateTime,
-			}
-			list = append(list, t)
-		}
-	}
-	return list, data
-}
-
-func ConvertCommentData(data []VComment) DoneCommentAddCount {
-	list := make([]doneComment, 0)
-	for len(data) != 0 {
-		for i := 0; i < len(data); i++ {
-			val := data[i]
-			if val.ParentId <= 0 {
-				likeCount, _ := GetCommentLikeCountById(val.ID)
-				r := data[i+1:]
-				data = data[:i]
-				data = append(data, r...)
-				i--
-				reply := make([]replyDTO, 0)
-				reply, data = findReply(data, val.ID)
-				t := doneComment{
-					ID:             val.ID,
-					UserId:         val.UserId,
-					Nickname:       val.Nickname,
-					Avatar:         val.Avatar,
-					WebSite:        val.WebSite,
-					CommentContent: val.CommentContent,
-					LikeCount:      likeCount,
-					CreateTime:     val.CreateTime,
-					ReplyDTOList:   reply,
-				}
-				list = append(list, t)
-			}
-		}
-	}
-	return DoneCommentAddCount{RecordList: list, Count: int64(len(list))}
 }
 
 //=========发送注册验证码邮件
