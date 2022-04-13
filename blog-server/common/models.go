@@ -34,7 +34,7 @@ type TLike struct {
 	ID     int64  `json:"id,omitempty" remark:"自增id" gorm:"primary_key"`
 	UserId int64  `json:"user_id,omitempty" remark:"用户id" gorm:"type:bigint;not null"`
 	Object string `json:"object,omitempty" remark:"表名" gorm:"type:varchar(32);not null"`
-	LikeId string `json:"article_like,omitempty" remark:"用户点赞文章id，评论id，说说id数组" gorm:"type:text"`
+	LikeId int64  `json:"article_like,omitempty" remark:"用户点赞文章id，评论id，说说id" gorm:"type:bigint;not nul"`
 }
 
 // TCategory 分类表

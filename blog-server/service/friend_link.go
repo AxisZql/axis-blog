@@ -13,7 +13,24 @@ import (
 
 type FriendLink struct{}
 
-func (f *FriendLink) ListFriendLinks(*gin.Context) {}
+func (f *FriendLink) ListFriendLinks(ctx *gin.Context) {
+	type LL struct {
+		ID          int64  `json:"id"`
+		LinkAddress string `json:"linkAddress"`
+		LinkAvatar  string `json:"linkAvatar"`
+		LinkIntro   string `json:"linkIntro"`
+		LinkName    string `json:"linkName"`
+	}
+	db := common.GetGorm()
+	var fl []LL
+	r1 := db.Model(&common.TFriendLink{}).Find(&fl)
+	if r1.Error != nil {
+		logger.Error(r1.Error.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	Response(ctx, errorcode.Success, fl, true, "操作成功")
+}
 
 type reqListFriendLinksBack struct {
 	Current  int    `form:"current"`

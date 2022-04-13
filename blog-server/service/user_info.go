@@ -108,7 +108,7 @@ func (u *UserInfo) UpdateUserAvatar(ctx *gin.Context) {
 		Response(ctx, errorcode.Fail, nil, false, "系统异常")
 		return
 	}
-	ui.Avatar = fmt.Sprintf("%s:%d/avatar/%s.%s", common.Conf.App.HostName, common.Conf.App.Port, fileNameMD5, extendName[1])
+	ui.Avatar = fmt.Sprintf("%s/avatar/%s.%s", common.Conf.App.HostName, fileNameMD5, extendName[1])
 	ui.UpdateTime = time.Now()
 	r3 := db.Save(&ui)
 	if r3.Error != nil {
