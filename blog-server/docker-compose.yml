@@ -1,0 +1,30 @@
+version: "3.7"
+services:
+  axisblog:
+    build: .
+    container_name: axisblog
+    ports:
+      - "9090:9080"
+    volumes:
+      - ./deployment/upload/static/:/home/static/
+    environment:
+      - AXSBLOG=axiszql-blog.v1.0
+    restart: always
+    privileged: true
+  axisnginx:
+    build: ./deployment/nginx
+    container_name: axisnginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./deployment/upload/static/:/usr/share/upload/static/  # 挂载静态文件目录
+      - ./deployment/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./deployment/nginx/frontend/blog:/usr/share/nginx/html/vue/blog
+      - ./deployment/nginx/frontend/admin:/usr/share/nginx/html/vue/admin
+    links:
+      - axisblog
+    depends_on:
+      - axisblog
+    restart: always
+    privileged: true
+

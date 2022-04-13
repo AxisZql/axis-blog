@@ -62,39 +62,34 @@ func Routers(r *gin.Engine) {
 	admin := r.Group("/admin")
 	users := r.Group("/users")
 
-	r.StaticFS("/avatar/", http.Dir("./static/avatar/"))
-	r.StaticFS("/farticles/", http.Dir("./static/articles/"))
-	r.StaticFS("/fphotos/", http.Dir("./static/photos/"))
-	r.StaticFS("/ftalks/", http.Dir("./static/talks/"))
-	r.StaticFS("/fconfig/", http.Dir("./static/config/"))
-
-	r.GET("/", blogInfo.GetBlogHomeInfo)                                  //查看博客信息
-	r.POST("/login", login.Login)                                         //用户登陆
-	r.GET("/logout", login.LoginOut)                                      //用户注销
-	r.POST("/register", userAuth.Register)                                //用户注册
-	r.GET("/talks", talk.ListTalks)                                       //查看说说列表
-	r.GET("/talks/:talkId", talk.GetTalkById)                             //根据id查看说说
-	r.POST("/talks/:talkId/like", talk.SaveTalkLike)                      //点赞说说
-	r.GET("/tags", tag.ListTags)                                          //查询标签列表
-	r.GET("/photos/albums", photoAlbum.ListPhotoAlbum)                    //获取相册列表
-	r.POST("/message", message.SaveMessage)                               //添加留言
-	r.GET("/message", message.ListMessage)                                //查看留言列表
-	r.GET("/links", friendLink.ListFriendLinks)                           //查看友链列表
-	r.GET("/comments", comment.ListComment)                               //查询评论
-	r.POST("/comments", comment.SaveComment)                              //添加评论
-	r.GET("/comments/:commentId/replies", comment.ListRepliesByCommentId) //查询评论下的回复
-	r.POST("/comments/:commentId/like", comment.SaveCommentLike)          //评论点赞
-	r.GET("/categories", category.ListCategories)                         //查看分类列表
-	r.GET("/about", blogInfo.GetAbout)                                    //查看关于我信息
-	r.POST("/voice", blogInfo.SendVoice)                                  //上传语音信息
-	r.POST("/report", blogInfo.Report)                                    //上传访客信息
-	r.GET("/articles/archives", article.ListArchives)                     //文章归档列表
-	r.GET("/articles", article.ListArticles)                              //查看首页文章
-	r.GET("/articles/:articleId", article.GetArticleById)                 //更加id查看文章
-	r.GET("/articles/condition", article.ListArticleByCondition)          //根据条件查询文章
-	r.GET("/articles/search", article.ListArticleBySearch)                //搜索文章
-	r.GET("/articles/:articleId/like", article.SaveArticleLike)           //点赞文章
-	r.GET("/home/talks", talk.ListHomeTalks)                              //查看首页说说
+	r.GET("/", blogInfo.GetBlogHomeInfo)                                       //查看博客信息
+	r.POST("/login", login.Login)                                              //用户登陆
+	r.GET("/logout", login.LoginOut)                                           //用户注销
+	r.POST("/register", userAuth.Register)                                     //用户注册
+	r.GET("/talks", talk.ListTalks)                                            //查看说说列表
+	r.GET("/talks/:talkId", talk.GetTalkById)                                  //根据id查看说说
+	r.POST("/talks/:talkId/:like", ctrl.Auth(), talk.SaveTalkLike)             //点赞说说
+	r.GET("/tags", tag.ListTags)                                               //查询标签列表
+	r.GET("/albums/:albumId/:photos", photo.ListPhotoByAlbumId)                //通过相册id分页获取照片
+	r.GET("/photos/albums", photoAlbum.ListPhotoAlbum)                         //获取相册列表
+	r.POST("/message", message.SaveMessage)                                    //添加留言
+	r.GET("/messages", message.ListMessage)                                    //查看留言列表
+	r.GET("/links", friendLink.ListFriendLinks)                                //查看友链列表
+	r.GET("/comments", comment.ListComment)                                    //查询评论
+	r.POST("/comments", ctrl.Auth(), comment.SaveComment)                      //添加评论
+	r.GET("/comments/:commentId/:replies", comment.ListRepliesByCommentId)     //查询评论下的回复
+	r.POST("/comments/:commentId/:like", ctrl.Auth(), comment.SaveCommentLike) //评论点赞
+	r.GET("/categories", category.ListCategories)                              //查看分类列表
+	r.GET("/about", blogInfo.GetAbout)                                         //查看关于我信息
+	r.POST("/voice", blogInfo.SendVoice)                                       //上传语音信息
+	r.POST("/report", blogInfo.Report)                                         //上传访客信息
+	r.GET("/articles/archives", article.ListArchives)                          //文章归档列表
+	r.GET("/articles", article.ListArticles)                                   //查看首页文章
+	r.GET("/articles/:articleId", article.GetArticleById)                      //更加id查看文章
+	r.GET("/articles/condition", article.ListArticleByCondition)               //根据条件查询文章
+	r.GET("/articles/search", article.ListArticleBySearch)                     //搜索文章
+	r.GET("/articles/:articleId/:like", ctrl.Auth(), article.SaveArticleLike)  //点赞文章
+	r.GET("/home/talks", talk.ListHomeTalks)                                   //查看首页说说
 
 	r.GET("/admin", ctrl.Auth(), blogInfo.GetBlogBackInfo) //查询后台信息
 	users.Use()
