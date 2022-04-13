@@ -13,7 +13,26 @@ import (
 
 type Tag struct{}
 
-func (t *Tag) ListTags(*gin.Context) {}
+func (t *Tag) ListTags(ctx *gin.Context) {
+	db := common.GetGorm()
+	var count int64
+	type TL struct {
+		TagName string `json:"tagName"`
+		ID      int64  `json:"id"`
+	}
+	var tagList []TL
+	r1 := db.Table("t_tag").Count(&count)
+	r1 = db.Table("t_tag").Find(&tagList)
+	if r1.Error != nil {
+		logger.Error(r1.Error.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	data := make(map[string]interface{})
+	data["count"] = count
+	data["recordList"] = tagList
+	Response(ctx, errorcode.Success, data, true, "操作成功")
+}
 
 type reqListTagBack struct {
 	Current  int    `form:"current"`

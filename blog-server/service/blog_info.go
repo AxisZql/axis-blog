@@ -266,7 +266,7 @@ func (b *BlogInfo) SaveConfigPic(ctx *gin.Context) {
 		Response(ctx, errorcode.Fail, nil, false, "系统异常")
 		return
 	}
-	imgUrl := fmt.Sprintf("%s:%d/fconfig/%s", common.Conf.App.HostName, common.Conf.App.Port, fileName)
+	imgUrl := fmt.Sprintf("%s/config/%s", common.Conf.App.HostName, fileName)
 	Response(ctx, errorcode.Fail, imgUrl, true, "操作成功")
 }
 func (b *BlogInfo) UpdateWebsiteConfig(ctx *gin.Context) {

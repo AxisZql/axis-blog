@@ -13,7 +13,37 @@ import (
 
 type Category struct{}
 
-func (c *Category) ListCategories(*gin.Context) {}
+func (c *Category) ListCategories(ctx *gin.Context) {
+	db := common.GetGorm()
+	var count int64
+	type CL struct {
+		ArticleCount int64  `json:"articleCount"`
+		CategoryName string `json:"categoryName"`
+		ID           int64  `json:"id"`
+	}
+	var categoryList []CL
+	r1 := db.Model(&common.TCategory{}).Count(&count)
+	r1 = db.Table("t_category").Find(&categoryList)
+	if r1.Error != nil {
+		logger.Error(r1.Error.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	for i, val := range categoryList {
+		var _count int64
+		r2 := db.Model(&common.TArticle{}).Where("category_id = ?", val.ID).Count(&_count)
+		if r2.Error != nil && r2.Error != gorm.ErrRecordNotFound {
+			logger.Error(r2.Error.Error())
+			Response(ctx, errorcode.Fail, nil, false, "系统异常")
+			return
+		}
+		categoryList[i].ArticleCount = _count
+	}
+	data := make(map[string]interface{})
+	data["count"] = count
+	data["recordList"] = categoryList
+	Response(ctx, errorcode.Success, data, true, "操作成功")
+}
 
 type reqListCategoriesBack struct {
 	Current  int    `form:"current"`
