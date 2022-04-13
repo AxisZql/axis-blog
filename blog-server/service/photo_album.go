@@ -47,7 +47,7 @@ func (p *PhotoAlbum) SavePhotoAlbumCover(ctx *gin.Context) {
 		Response(ctx, errorcode.Fail, nil, false, "系统异常")
 		return
 	}
-	imgUrl := fmt.Sprintf("%s:%d/fphotos/%s", common.Conf.App.HostName, common.Conf.App.Port, fileName)
+	imgUrl := fmt.Sprintf("%s/photos/%s", common.Conf.App.HostName, fileName)
 	Response(ctx, errorcode.Fail, imgUrl, true, "操作成功")
 
 }
@@ -207,5 +207,23 @@ func (p *PhotoAlbum) GetPhotoAlbumBackById(ctx *gin.Context) {
 	album.PhotoCount = count
 	Response(ctx, errorcode.Success, album, false, "操作成功")
 }
-func (p *PhotoAlbum) DeletePhotoAlbumById(*gin.Context) {}
-func (p *PhotoAlbum) ListPhotoAlbum(*gin.Context)       {}
+func (p *PhotoAlbum) DeletePhotoAlbumById(ctx *gin.Context) {
+	Response(ctx, errorcode.Success, nil, false, "很抱歉还没有写删除相册的接口")
+}
+func (p *PhotoAlbum) ListPhotoAlbum(ctx *gin.Context) {
+	db := common.GetGorm()
+	type PA struct {
+		ID         int64  `json:"id"`
+		AlbumCover string `json:"albumCover"`
+		AlbumName  string `json:"albumName"`
+		AlbumDesc  string `json:"albumDesc"`
+	}
+	var albumList []PA
+	r1 := db.Model(&common.TPhotoAlbum{}).Find(&albumList)
+	if r1.Error != nil {
+		logger.Error(r1.Error.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	Response(ctx, errorcode.Success, albumList, true, "操作成功")
+}

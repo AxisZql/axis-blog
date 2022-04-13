@@ -214,4 +214,51 @@ func (p *Photo) DeletePhotos(ctx *gin.Context) {
 	}
 	Response(ctx, errorcode.Success, nil, true, "操作成功")
 }
-func (p *Photo) ListPhotoByAlbumId(*gin.Context) {}
+
+type reqListPhotoByAlbumId struct {
+	AlbumId int64  `uri:"albumId"`
+	Path    string `uri:"photos"`
+	Current int    `form:"current"`
+	Size    int    `form:"size"`
+}
+
+func (p *Photo) ListPhotoByAlbumId(ctx *gin.Context) {
+	var form reqListPhotoByAlbumId
+	if err := ctx.ShouldBindUri(&form); err != nil {
+		Response(ctx, errorcode.ValidError, nil, false, "参数校验失败")
+		return
+	}
+	_ = ctx.ShouldBind(&form)
+	if form.Current <= 0 || form.Size <= 0 {
+		form.Current = 1
+		form.Size = 10
+	}
+	if form.Path != "photos" {
+		Response(ctx, errorcode.ValidError, nil, false, "参数校验失败")
+		return
+	}
+	db := common.GetGorm()
+	data := make(map[string]interface{})
+	var album common.TPhotoAlbum
+	r1 := db.Where("id = ?", form.AlbumId).First(&album)
+	if r1.Error != nil && r1.Error != gorm.ErrRecordNotFound {
+		logger.Error(r1.Error.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	data["photoAlbumCover"] = album.AlbumCover
+	data["photoAlbumName"] = album.AlbumName
+	photoList := make([]string, 0)
+	var pl []common.TPhoto
+	r1 = db.Where("album_id = ?", form.AlbumId).Limit(form.Size).Offset((form.Current - 1) * form.Size).Find(&pl)
+	if r1.Error != nil && r1.Error != gorm.ErrRecordNotFound {
+		logger.Error(r1.Error.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	for _, val := range pl {
+		photoList = append(photoList, val.PhotoSrc)
+	}
+	data["photoList"] = photoList
+	Response(ctx, errorcode.Success, data, true, "操作成功")
+}

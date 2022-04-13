@@ -13,8 +13,52 @@ import (
 
 type Message struct{}
 
-func (m *Message) SaveMessage(*gin.Context) {}
-func (m *Message) ListMessage(*gin.Context) {}
+type reqSaveMessage struct {
+	Avatar         string `json:"avatar" binding:"required"`
+	MessageContent string `json:"messageContent" binding:"required"`
+	Nickname       string `json:"nickname" binding:"required"`
+	Time           int    `json:"time" binding:"required"`
+}
+
+func (m *Message) SaveMessage(ctx *gin.Context) {
+	var form reqSaveMessage
+	if err := ctx.ShouldBindJSON(&form); err != nil {
+		Response(ctx, errorcode.ValidError, nil, false, "参数校验失败")
+		return
+	}
+	db := common.GetGorm()
+	message := common.TMessage{
+		Avatar:         form.Avatar,
+		MessageContent: form.MessageContent,
+		Nickname:       form.Nickname,
+		Speed:          form.Time,
+	}
+	r1 := db.Model(&common.TMessage{}).Create(&message)
+	if r1.Error != nil {
+		logger.Error(r1.Error.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	Response(ctx, errorcode.Success, nil, true, "操作成功")
+}
+func (m *Message) ListMessage(ctx *gin.Context) {
+	db := common.GetGorm()
+	type ML struct {
+		ID             int64  `json:"id"`
+		Avatar         string `json:"avatar"`
+		MessageContent string `json:"messageContent"`
+		Nickname       string `json:"nickname"`
+		Speed          int    `json:"time"`
+	}
+	var messageList []ML
+	r1 := db.Model(&common.TMessage{}).Find(&messageList)
+	if r1.Error != nil {
+		logger.Error(r1.Error.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	Response(ctx, errorcode.Success, messageList, true, "操作成功")
+}
 
 type reqListMessageBack struct {
 	Current  int         `form:"current"`

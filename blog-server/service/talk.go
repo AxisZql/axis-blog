@@ -114,8 +114,59 @@ func (t *Talk) GetTalkById(ctx *gin.Context) {
 	Response(ctx, errorcode.Success, talkInfo, true, "操作成功")
 }
 
-func (t *Talk) SaveTalkLike(ctx *gin.Context) {
+type reqSaveTalkLike struct {
+	TalkId int64  `uri:"talkId" binding:"required"`
+	Path   string `uri:"like" binding:"required"`
+}
 
+func (t *Talk) SaveTalkLike(ctx *gin.Context) {
+	var form reqSaveTalkLike
+	if err := ctx.ShouldBindUri(&form); err != nil {
+		Response(ctx, errorcode.ValidError, nil, false, "参数校验失败")
+		return
+	}
+	if form.Path != "like" {
+		Response(ctx, errorcode.ValidError, nil, false, "参数校验失败")
+		return
+	}
+	db := common.GetGorm()
+	_session, _ := Store.Get(ctx.Request, "CurUser")
+	auid := _session.Values["a_userid"]
+	var ua common.TUserAuth
+	r1 := db.Where("id = ?", auid).First(&ua)
+	if r1.Error != nil {
+		logger.Error(r1.Error.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	var exist common.TLike
+	r1 = db.Where("object = ? AND user_id = ? AND like_id = ?", "t_talk", ua.UserInfoId, form.TalkId).First(&exist)
+	if r1.Error != nil && r1.Error != gorm.ErrRecordNotFound {
+		logger.Error(r1.Error.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	if r1.Error == nil {
+		r1 = db.Model(&common.TLike{}).Where("id = ?", exist.ID).Delete(&common.TLike{})
+		if r1.Error != nil && r1.Error != gorm.ErrRecordNotFound {
+			logger.Error(r1.Error.Error())
+			Response(ctx, errorcode.Fail, nil, false, "系统异常")
+			return
+		}
+	} else {
+		tl := common.TLike{
+			UserId: ua.UserInfoId,
+			Object: "t_talk",
+			LikeId: form.TalkId,
+		}
+		r1 = db.Model(&common.TLike{}).Create(&tl)
+		if r1.Error != nil {
+			logger.Error(r1.Error.Error())
+			Response(ctx, errorcode.Fail, nil, false, "系统异常")
+			return
+		}
+	}
+	Response(ctx, errorcode.Success, nil, true, "操作成功")
 }
 
 type reqSaveTalkImages struct {
@@ -150,7 +201,7 @@ func (t *Talk) SaveTalkImages(ctx *gin.Context) {
 		Response(ctx, errorcode.Fail, nil, false, "系统异常")
 		return
 	}
-	imgUrl := fmt.Sprintf("%s:%d/ftalks/%s", common.Conf.App.HostName, common.Conf.App.Port, fileName)
+	imgUrl := fmt.Sprintf("%s/talks/%s", common.Conf.App.HostName, fileName)
 	Response(ctx, errorcode.Fail, imgUrl, true, "操作成功")
 }
 
