@@ -506,7 +506,7 @@ func (a *Article) SaveArticleImages(ctx *gin.Context) {
 		Response(ctx, errorcode.Fail, nil, false, "系统异常")
 		return
 	}
-	imgUrl := fmt.Sprintf("%s:%d/farticles/%s", common.Conf.App.HostName, common.Conf.App.Port, fileName)
+	imgUrl := fmt.Sprintf("%s/articles/%s", common.Conf.App.HostName, fileName)
 	Response(ctx, errorcode.Fail, imgUrl, true, "操作成功")
 }
 
@@ -617,7 +617,7 @@ func (a *Article) GetArticleById(ctx *gin.Context) {
 	}
 	db := common.GetGorm()
 	data := respGetArticleById{}
-	row, r1 := db.Raw("select * from v_article_info where id = ?", form.ArticleId).Rows()
+	row, r1 := db.Raw("select * from v_article_info where id = ? ", form.ArticleId).Rows()
 	if r1 != nil && r1 != gorm.ErrRecordNotFound {
 		logger.Error(r1.Error())
 		Response(ctx, errorcode.Fail, nil, false, "系统异常")
@@ -643,28 +643,28 @@ func (a *Article) GetArticleById(ctx *gin.Context) {
 		data.TagDTOList = append(data.TagDTOList, t)
 	}
 	// 找前一篇文章
-	r2 := db.Model(&common.TArticle{}).Where("id < ? and is_delete=0", data.ID).Order("id DESC").First(&data.LastArticle)
+	r2 := db.Model(&common.TArticle{}).Where("id < ? and is_delete=0 AND status = 1", data.ID).Order("id DESC").First(&data.LastArticle)
 	if r2.Error != nil && r2.Error != gorm.ErrRecordNotFound {
 		logger.Error(r2.Error.Error())
 		Response(ctx, errorcode.Fail, nil, false, "系统异常")
 		return
 	}
 	//查找下一篇文章
-	r3 := db.Model(&common.TArticle{}).Where("id > ? and is_delete=0", data.ID).Order("id ASC").First(&data.NextArticle)
+	r3 := db.Model(&common.TArticle{}).Where("id > ? and is_delete=0 AND status = 1", data.ID).Order("id ASC").First(&data.NextArticle)
 	if r3.Error != nil && r3.Error != gorm.ErrRecordNotFound {
 		logger.Error(r3.Error.Error())
 		Response(ctx, errorcode.Fail, nil, false, "系统异常")
 		return
 	}
 	// 获取5篇最新的文章
-	r4 := db.Model(&common.TArticle{}).Where("is_delete = 0").Order("create_time DESC").Limit(5).Find(&data.NewestArticleList)
+	r4 := db.Model(&common.TArticle{}).Where("is_delete = 0 AND status = 1").Order("create_time DESC").Limit(5).Find(&data.NewestArticleList)
 	if r4.Error != nil && r4.Error != gorm.ErrRecordNotFound {
 		logger.Error(r4.Error.Error())
 		Response(ctx, errorcode.Fail, nil, false, "系统异常")
 		return
 	}
 	// 推荐3篇浏览数最高的文章
-	r6 := db.Model(&common.TArticle{}).Where("is_delete = 0").Order("view_count DESC").Limit(3).Find(&data.RecommendArticleList)
+	r6 := db.Model(&common.TArticle{}).Where("is_delete = 0 AND status = 1").Order("view_count DESC").Limit(3).Find(&data.RecommendArticleList)
 	if r6.Error != nil && r6.Error != gorm.ErrRecordNotFound {
 		logger.Error(r6.Error.Error())
 		Response(ctx, errorcode.Fail, nil, false, "系统异常")
@@ -673,7 +673,80 @@ func (a *Article) GetArticleById(ctx *gin.Context) {
 	Response(ctx, errorcode.Success, data, true, "操作成功")
 
 }
-func (a *Article) ListArticleByCondition(ctx *gin.Context) {}
+
+type reqListArticleByCondition struct {
+	CategoryId int64 `form:"categoryId"`
+	TagId      int64 `form:"tagId"`
+	Current    int   `form:"current"`
+}
+
+func (a *Article) ListArticleByCondition(ctx *gin.Context) {
+	var form reqListArticleByCondition
+	if err := ctx.ShouldBind(&form); err != nil {
+		Response(ctx, errorcode.Fail, nil, false, "参数校验失败")
+		return
+	}
+	type AL struct {
+		ArticleCover string    `json:"articleCover"`
+		ArticleTitle string    `json:"articleTitle"`
+		CategoryId   int64     `json:"categoryId"`
+		CategoryName string    `json:"categoryName"`
+		CreateTime   time.Time `json:"createTime"`
+		ID           int64     `json:"id"`
+	}
+	var articleList []AL
+	db := common.GetGorm()
+	data := make(map[string]interface{})
+	if form.CategoryId != 0 {
+		categoryId := form.CategoryId
+		r1 := db.Table("v_article_info").Where("category_id = ?", categoryId).Limit(10).Offset((form.Current - 1) * 10).Find(&articleList)
+		if r1.Error != nil && r1.Error != gorm.ErrRecordNotFound {
+			logger.Error(r1.Error.Error())
+			Response(ctx, errorcode.Fail, nil, false, "系统异常")
+			return
+		}
+		var t common.TCategory
+		r1 = db.Model(&common.TCategory{}).Where("id = ?", categoryId).First(&t)
+		if r1.Error != nil && r1.Error != gorm.ErrRecordNotFound {
+			logger.Error(r1.Error.Error())
+			Response(ctx, errorcode.Fail, nil, false, "系统异常")
+			return
+		}
+		data["articlePreviewDTOList"] = articleList
+		data["name"] = t.CategoryName
+
+	} else if form.TagId != 0 {
+		tagId := form.TagId
+		var tal []common.TArticleTag
+		r1 := db.Model(&common.TArticleTag{}).Where("tag_id = ?", tagId).Find(&tal)
+		if r1.Error != nil && r1.Error != gorm.ErrRecordNotFound {
+			logger.Error(r1.Error.Error())
+			Response(ctx, errorcode.Fail, nil, false, "系统异常")
+			return
+		}
+		idList := make([]int64, 0)
+		for _, val := range tal {
+			idList = append(idList, val.ArticleId)
+		}
+		r1 = db.Table("v_article_info").Where("id IN ?", idList).Limit(10).Offset((form.Current - 1) * 10).Find(&articleList)
+		if r1.Error != nil && r1.Error != gorm.ErrRecordNotFound {
+			logger.Error(r1.Error.Error())
+			Response(ctx, errorcode.Fail, nil, false, "系统异常")
+			return
+		}
+		var t common.TTag
+		r1 = db.Model(&common.TTag{}).Where("id = ?", tagId).First(&t)
+		if r1.Error != nil && r1.Error != gorm.ErrRecordNotFound {
+			logger.Error(r1.Error.Error())
+			Response(ctx, errorcode.Fail, nil, false, "系统异常")
+			return
+		}
+
+		data["articlePreviewDTOList"] = articleList
+		data["name"] = t.TagName
+	}
+	Response(ctx, errorcode.Success, data, true, "操作成功")
+}
 
 type reqListArticleBySearch struct {
 	Current  int    `form:"current" binding:"required"`
@@ -738,4 +811,58 @@ func (a *Article) ListArticleBySearch(ctx *gin.Context) {
 	Response(ctx, errorcode.Success, articleList, true, "操作成功")
 
 }
-func (a *Article) SaveArticleLike(ctx *gin.Context) {}
+
+type reqSaveArticleLike struct {
+	ArticleId int64  `uri:"articleId" binding:"required"`
+	Path      string `uri:"like" binding:"required"`
+}
+
+func (a *Article) SaveArticleLike(ctx *gin.Context) {
+	var form reqSaveArticleLike
+	if err := ctx.ShouldBindUri(&form); err != nil {
+		Response(ctx, errorcode.ValidError, nil, false, "参数校验失败")
+		return
+	}
+	if form.Path != "like" {
+		Response(ctx, errorcode.ValidError, nil, false, "参数校验失败")
+		return
+	}
+	db := common.GetGorm()
+	_session, _ := Store.Get(ctx.Request, "CurUser")
+	auid := _session.Values["a_userid"]
+	var ua common.TUserAuth
+	r1 := db.Where("id = ?", auid).First(&ua)
+	if r1.Error != nil {
+		logger.Error(r1.Error.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	var exist common.TLike
+	r1 = db.Where("object = ? AND user_id = ? AND like_id = ?", "t_article", ua.UserInfoId, form.ArticleId).First(&exist)
+	if r1.Error != nil && r1.Error != gorm.ErrRecordNotFound {
+		logger.Error(r1.Error.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	if r1.Error == nil {
+		r1 = db.Model(&common.TLike{}).Where("id = ?", exist.ID).Delete(&common.TLike{})
+		if r1.Error != nil && r1.Error != gorm.ErrRecordNotFound {
+			logger.Error(r1.Error.Error())
+			Response(ctx, errorcode.Fail, nil, false, "系统异常")
+			return
+		}
+	} else {
+		tl := common.TLike{
+			UserId: ua.UserInfoId,
+			Object: "t_article",
+			LikeId: form.ArticleId,
+		}
+		r1 = db.Model(&common.TLike{}).Create(&tl)
+		if r1.Error != nil {
+			logger.Error(r1.Error.Error())
+			Response(ctx, errorcode.Fail, nil, false, "系统异常")
+			return
+		}
+	}
+	Response(ctx, errorcode.Success, nil, true, "操作成功")
+}
