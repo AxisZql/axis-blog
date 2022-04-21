@@ -630,6 +630,22 @@ func (a *Article) GetArticleById(ctx *gin.Context) {
 	for row.Next() {
 		_ = db.ScanRows(row, &data)
 	}
+
+	var _article common.TArticle
+	r0 := db.Where("id = ?", form.ArticleId).First(&_article)
+	if r0.Error != nil && r0.Error != gorm.ErrRecordNotFound {
+		logger.Error(r0.Error.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	_article.ViewCount = _article.ViewCount + 1
+	r0 = db.Save(&_article)
+	if r0.Error != nil && r0.Error != gorm.ErrRecordNotFound {
+		logger.Error(r0.Error.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+
 	//查找文章对应的标签
 	rows, r5 := db.Raw("select article_id,tt.id  as tag_id ,tag_name from t_article_tag ta join t_tag tt on ta.tag_id = tt.id where article_id=?", data.ID).Rows()
 	if r5 != nil && r5 != gorm.ErrRecordNotFound {
