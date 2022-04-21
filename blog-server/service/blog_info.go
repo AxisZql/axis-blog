@@ -42,6 +42,7 @@ type webConfig struct {
 	UserAvatar        string   `json:"userAvatar"`
 	IsCommentReview   int      `json:"isCommentReview"`
 	IsMessageReview   int      `json:"isMessageReview"`
+	WebsocketUrl      string   `json:"websocketUrl"`
 	IsEmailNotice     int      `json:"isEmailNotice"`
 	IsReward          int      `json:"isReward"`
 	WeiXinQRCode      string   `json:"weiXinQRCode"`
