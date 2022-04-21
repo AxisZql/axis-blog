@@ -17,7 +17,7 @@ func InitRedis() (err error) {
 	RedisCli = redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%s", host, port),
 		Password: password,
-		DB:       0,
+		DB:       Conf.Redis.Db,
 	})
 	logger.Info(fmt.Sprintf("Ping Redis: %s:%s", host, port))
 	_, err = RedisCli.Ping().Result()

@@ -63,15 +63,15 @@ type TArticleTag struct {
 // TChatRecord 聊天记录表
 type TChatRecord struct {
 	ID         int64     `json:"id,omitempty" remark:"自增id" gorm:"primary_key"`
-	UserId     int64     `json:"user_id,omitempty" remark:"用户id(匿名用户没有id)" gorm:"type:bigint"`
+	UserId     int64     `json:"userId,omitempty" remark:"用户id(匿名用户没有id)" gorm:"type:bigint"`
 	Nickname   string    `json:"nickname,omitempty" remark:"用户昵称" gorm:"type:varchar(50);not null"`
 	Avatar     string    `json:"avatar,omitempty" remark:"用户头像" gorm:"type:varchar(255);not null"`
 	Content    string    `json:"content,omitempty" remark:"聊天内容" gorm:"type:varchar(1024);not null"`
-	IpAddress  string    `json:"ip_address,omitempty" remark:"ip地址" gorm:"type:varchar(50);not null"`
-	IpSource   string    `json:"ip_source,omitempty" remark:"ip来源" gorm:"type:varchar(255);not null"`
+	IpAddress  string    `json:"ipAddress,omitempty" remark:"ip地址" gorm:"type:varchar(50);not null"`
+	IpSource   string    `json:"ipSource,omitempty" remark:"ip来源" gorm:"type:varchar(255);not null"`
 	Type       int       `json:"type,omitempty" remark:"类型" gorm:"type:tinyint;not null"`
-	CreateTime time.Time `json:"create_time,omitempty" remark:"创建时间" gorm:"type:datetime;default:current_timestamp;not null"`
-	UpdateTime time.Time `json:"update_time,omitempty" remark:"更新时间" gorm:"type:datetime;default:current_timestamp;not null"`
+	CreateTime time.Time `json:"createTime,omitempty" remark:"创建时间" gorm:"type:datetime;default:current_timestamp;not null"`
+	UpdateTime time.Time `json:"updateTime,omitempty" remark:"更新时间" gorm:"type:datetime;default:current_timestamp;not null"`
 }
 
 // TComment 评论表

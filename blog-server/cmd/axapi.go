@@ -32,6 +32,9 @@ func AxAPi() {
 		WriteTimeout:   3600 * time.Second,
 		MaxHeaderBytes: 32 << 20,
 	}
+	wsm := ctrl.GetWsServerManager()
+	go wsm.Start()
+	go wsm.Quit()
 	logger.Info(fmt.Sprintf("服务在%s端口启动成功", port))
 	err := server.ListenAndServe()
 	if err != nil {
@@ -59,9 +62,11 @@ func Routers(r *gin.Engine) {
 	category := ctrl.Category{}
 	blogInfo := ctrl.BlogInfo{}
 	article := ctrl.Article{}
+	ws := ctrl.MyWebSocket{}
 	admin := r.Group("/admin")
 	users := r.Group("/users")
 
+	r.GET("/ws", ws.WebSocketHandle)                                           //webSocket服务
 	r.GET("/", blogInfo.GetBlogHomeInfo)                                       //查看博客信息
 	r.POST("/login", login.Login)                                              //用户登陆
 	r.GET("/logout", login.LoginOut)                                           //用户注销
@@ -72,7 +77,7 @@ func Routers(r *gin.Engine) {
 	r.GET("/tags", tag.ListTags)                                               //查询标签列表
 	r.GET("/albums/:albumId/:photos", photo.ListPhotoByAlbumId)                //通过相册id分页获取照片
 	r.GET("/photos/albums", photoAlbum.ListPhotoAlbum)                         //获取相册列表
-	r.POST("/message", message.SaveMessage)                                    //添加留言
+	r.POST("/messages", message.SaveMessage)                                   //添加留言
 	r.GET("/messages", message.ListMessage)                                    //查看留言列表
 	r.GET("/links", friendLink.ListFriendLinks)                                //查看友链列表
 	r.GET("/comments", comment.ListComment)                                    //查询评论
@@ -88,7 +93,7 @@ func Routers(r *gin.Engine) {
 	r.GET("/articles/:articleId", article.GetArticleById)                      //更加id查看文章
 	r.GET("/articles/condition", article.ListArticleByCondition)               //根据条件查询文章
 	r.GET("/articles/search", article.ListArticleBySearch)                     //搜索文章
-	r.GET("/articles/:articleId/:like", ctrl.Auth(), article.SaveArticleLike)  //点赞文章
+	r.POST("/articles/:articleId/:like", ctrl.Auth(), article.SaveArticleLike) //点赞文章
 	r.GET("/home/talks", talk.ListHomeTalks)                                   //查看首页说说
 
 	r.GET("/admin", ctrl.Auth(), blogInfo.GetBlogBackInfo) //查询后台信息

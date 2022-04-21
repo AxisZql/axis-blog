@@ -42,9 +42,10 @@ type Configure struct {
 	}
 
 	Redis struct {
-		Host     string `json:"host" remark:"rediskey ip" must:"true"`
+		Host     string `json:"host" remark:"ip" must:"true"`
 		Port     string `json:"port" remark:"redis端口" must:"true"`
-		Password string `json:"password" remark:"rediskey 密码" must:"true"`
+		Db       int    `json:"db" remark:"数据库编号" must:"true"`
+		Password string `json:"password" remark:"密码" must:"true"`
 	}
 
 	RabbitMq struct {
