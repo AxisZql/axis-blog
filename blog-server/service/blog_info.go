@@ -66,15 +66,12 @@ func (b *BlogInfo) GetBlogHomeInfo(ctx *gin.Context) {
 	var categoryCount int64
 	// 标签数量
 	var tagCount int64
-	// 获取网站配置
-	wConfig := common.TWebsiteConfig{}
 	db := common.GetGorm()
 	r1 := db.Model(&common.TArticle{}).Count(&articleCount)
 	r2 := db.Model(&common.TCategory{}).Count(&categoryCount)
 	r3 := db.Model(&common.TTag{}).Count(&tagCount)
-	r4 := db.Model(&common.TWebsiteConfig{}).First(&wConfig)
-	if r1.Error != nil || r2.Error != nil || r3.Error != nil || r4.Error != nil {
-		logger.Error(r1.Error.Error() + "|||" + r2.Error.Error() + "|||" + r3.Error.Error() + "|||" + r4.Error.Error())
+	if r1.Error != nil || r2.Error != nil || r3.Error != nil {
+		logger.Error(r1.Error.Error() + "|||" + r2.Error.Error() + "|||" + r3.Error.Error())
 		Response(ctx, errorcode.Fail, nil, false, "系统异常")
 		return
 	}
@@ -84,6 +81,29 @@ func (b *BlogInfo) GetBlogHomeInfo(ctx *gin.Context) {
 		logger.Error(err.Error())
 		Response(ctx, errorcode.Fail, nil, false, "系统异常")
 		return
+	}
+	webConfigStr, e := redisClient.Get(rediskey.WebsiteConfig).Result()
+	if e != nil && e != redis.Nil {
+		logger.Error(e.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	if e == redis.Nil {
+		// 获取网站配置
+		var wConfig common.TWebsiteConfig
+		r4 := db.Model(&common.TWebsiteConfig{}).First(&wConfig)
+		if r4.Error != nil {
+			logger.Error(r1.Error.Error())
+			Response(ctx, errorcode.Fail, nil, false, "系统异常")
+			return
+		}
+		webConfigStr = wConfig.Config
+		// 将网站配置保存到redis中
+		if err2 := redisClient.Set(rediskey.WebsiteConfig, wConfig.Config, -1).Err(); err2 != nil {
+			logger.Error(err2.Error())
+			Response(ctx, errorcode.Fail, nil, false, "系统异常")
+			return
+		}
 	}
 	pageList := make([]page, 0)
 	r5 := db.Model(&common.TPage{}).Find(&pageList)
@@ -98,15 +118,10 @@ func (b *BlogInfo) GetBlogHomeInfo(ctx *gin.Context) {
 	data.TagCount = tagCount
 	data.ViewsCount = viewsCount
 	w := webConfig{}
-	_ = json.Unmarshal([]byte(wConfig.Config), &w)
+	_ = json.Unmarshal([]byte(webConfigStr), &w)
 	data.WebsiteConfig = w
 	data.PageList = pageList
-	// 将网站配置保存到redis中
-	if err := redisClient.Set(rediskey.WebsiteConfig, wConfig.Config, -1).Err(); err != nil {
-		logger.Error(err.Error())
-		Response(ctx, errorcode.Fail, nil, false, "系统异常")
-		return
-	}
+
 	Response(ctx, errorcode.Success, data, true, "操作成功")
 
 }
