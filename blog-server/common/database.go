@@ -130,13 +130,11 @@ from (select  tt.*,avatar,nickname
       where t_like.like_id = t_talk.id
         and t_like.object = 't_talk' group by t_talk.id) as lc on t1.id = lc.id
          left join
-
-
      (select count(*) as comment_count, t_talk.id
       from t_comment,
            t_talk
       where t_comment.topic_id = t_talk.id
-        and t_comment.type = 3 group by t_talk.id) lco on t1.id = lco.id;
+        and t_comment.type = 3 group by t_talk.id) lco on t1.id = lco.id order by is_top DESC;
 `
 	vUserInfo = `
 		create view v_user_info as 

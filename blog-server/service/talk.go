@@ -10,6 +10,7 @@ import (
 	"gorm.io/gorm"
 	"io/ioutil"
 	"mime/multipart"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -73,6 +74,22 @@ func (t *Talk) ListTalks(ctx *gin.Context) {
 		Response(ctx, errorcode.Fail, nil, false, "系统异常")
 		return
 	}
+	// 根据是否置顶进行排序
+	sort.Slice(talkList, func(i, j int) bool {
+		if talkList[i].IsTop == 1 && talkList[j].IsTop == 1 {
+			return talkList[i].CreateTime.Unix() > talkList[j].CreateTime.Unix()
+
+		} else if talkList[i].IsTop == 1 || talkList[j].IsTop == 1 {
+			if talkList[i].IsTop == 1 {
+				return true
+			} else {
+				return false
+			}
+		} else {
+			// 两者都为0
+			return talkList[i].CreateTime.Unix() > talkList[j].CreateTime.Unix()
+		}
+	})
 	for i, val := range talkList {
 		var imgList []string
 		if val.Images == "" {
