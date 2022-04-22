@@ -5,15 +5,16 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/gorilla/websocket"
-	"gorm.io/gorm"
 	"net/http"
 	"os"
 	"sort"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
+	"gorm.io/gorm"
 )
 
 type MyWebSocket struct{}
@@ -286,17 +287,19 @@ func (mw *MyWebSocket) WebSocketHandle(ctx *gin.Context) {
 	ua := ctx.GetHeader("User-Agent")
 	id := ip + ua
 	idMd5 := fmt.Sprintf("%x", md5.Sum([]byte(id)))
-	client := &Client{
-		ID:     idMd5,
-		Socket: conn, Send: make(chan []byte),
-		IpAddress:  ip,
-		IpSource:   addr.Data.Province,
-		UserId:     userid,
-		Start:      time.Now(),
-		ExpireTime: time.Minute * 1,
+	if _, ok := Manager.Clients[idMd5]; !ok {
+		client := &Client{
+			ID:     idMd5,
+			Socket: conn, Send: make(chan []byte),
+			IpAddress:  ip,
+			IpSource:   addr.Data.Province,
+			UserId:     userid,
+			Start:      time.Now(),
+			ExpireTime: time.Minute * 1,
+		}
+		Manager.Register <- client
+		go client.Read()
+		go client.Write()
+		go client.Check()
 	}
-	Manager.Register <- client
-	go client.Read()
-	go client.Write()
-	go client.Check()
 }
