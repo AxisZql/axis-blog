@@ -49,7 +49,8 @@ func (manager *ClientManager) Start() {
 		case conn := <-Manager.Register:
 			Manager.Clients[conn.ID] = conn
 			// 如果有新用户连接则发送最近聊天记录和在线人数给他
-			Manager.InitSend(conn)
+			count := len(Manager.Clients)
+			Manager.InitSend(conn, count)
 		}
 	}
 }
@@ -67,11 +68,9 @@ func (manager *ClientManager) Quit() {
 	}
 }
 
-func (manager *ClientManager) InitSend(cur *Client) {
-	// 获取在线人数
-	count := len(Manager.Clients)
+func (manager *ClientManager) InitSend(cur *Client, count int) {
 	resp, _ := json.Marshal(&WsMessage{Type: 1, Data: count})
-	cur.Send <- resp
+	Manager.Broadcast <- resp
 	db := common.GetGorm()
 	// 获取消息历史记录(12条最新)
 	var chatList []common.TChatRecord
@@ -121,8 +120,8 @@ func (c *Client) Check() {
 func (c *Client) Read() {
 	// 出现故障后把当前客户端注销
 	defer func() {
-		Manager.UnRegister <- c
 		_ = c.Socket.Close()
+		Manager.UnRegister <- c
 	}()
 	for {
 		_, data, err := c.Socket.ReadMessage()
@@ -228,6 +227,7 @@ func (c *Client) Read() {
 func (c *Client) Write() {
 	defer func() {
 		_ = c.Socket.Close()
+		Manager.UnRegister <- c
 	}()
 	for {
 		select {
@@ -237,12 +237,14 @@ func (c *Client) Write() {
 				err := c.Socket.WriteMessage(websocket.CloseMessage, []byte{})
 				if err != nil {
 					logger.Error(err.Error())
+					return
 				}
 				return
 			}
 			err := c.Socket.WriteMessage(websocket.TextMessage, msg)
 			if err != nil {
 				logger.Error(err.Error())
+				return
 			}
 		}
 	}
@@ -253,9 +255,10 @@ var once sync.Once
 func GetWsServerManager() *ClientManager {
 	once.Do(func() {
 		Manager = &ClientManager{
-			Broadcast: make(chan []byte),
-			Clients:   make(map[string]*Client),
-			Register:  make(chan *Client),
+			Broadcast:  make(chan []byte),
+			Clients:    make(map[string]*Client),
+			Register:   make(chan *Client),
+			UnRegister: make(chan *Client), //一定要初始化channel 否则会一直阻塞
 		}
 	})
 	return Manager
