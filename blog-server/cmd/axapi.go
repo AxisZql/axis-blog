@@ -35,6 +35,7 @@ func AxAPi() {
 	wsm := ctrl.GetWsServerManager()
 	go wsm.Start()
 	go wsm.Quit()
+	go wsm.BroadcastSend()
 	logger.Info(fmt.Sprintf("服务在%s端口启动成功", port))
 	err := server.ListenAndServe()
 	if err != nil {
