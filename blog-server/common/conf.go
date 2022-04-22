@@ -44,7 +44,7 @@ type Configure struct {
 	Redis struct {
 		Host     string `json:"host" remark:"ip" must:"true"`
 		Port     string `json:"port" remark:"redis端口" must:"true"`
-		Db       int    `json:"db" remark:"数据库编号" must:"true"`
+		Db       int    `json:"db" remark:"数据库编号" must:"false"`
 		Password string `json:"password" remark:"密码" must:"true"`
 	}
 

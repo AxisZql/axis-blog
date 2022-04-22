@@ -386,7 +386,74 @@ func (b *BlogInfo) UpdateAbout(ctx *gin.Context) {
 	}
 	Response(ctx, errorcode.Success, nil, true, "操作成功")
 }
-func (b *BlogInfo) SendVoice(*gin.Context) {}
+
+type reqSendVoice struct {
+	File      *multipart.FileHeader `form:"file" binding:"required"`
+	Type      int                   `form:"type" binding:"required"`
+	Nickname  string                `form:"nickname" `
+	Avatar    string                `form:"avatar"`
+	IpAddress string                `form:"ipAddress"`
+	IpSource  string                `form:"ipSource"`
+}
+
+func (b *BlogInfo) SendVoice(ctx *gin.Context) {
+	var form reqSendVoice
+	if err := ctx.ShouldBind(&form); err != nil {
+		Response(ctx, errorcode.ValidError, nil, false, "参数校验失败")
+		return
+	}
+	f, _ := form.File.Open()
+	extendName := strings.Split(form.File.Filename, ".")
+	if len(extendName) != 2 && extendName[1] != "wav" {
+		Response(ctx, errorcode.ValidError, nil, false, "不支持的语音格式;仅支持wav格式")
+		return
+	}
+	defer func(f multipart.File) {
+		err := f.Close()
+		if err != nil {
+			logger.Error(err.Error())
+		}
+	}(f)
+	fileData, err2 := ioutil.ReadAll(f)
+	if err2 != nil {
+		logger.Error(err2.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	fileMD5 := fmt.Sprintf("%x", md5.Sum(fileData))
+	fileName := fileMD5 + "." + extendName[1]
+	filePath := common.Conf.App.VoiceDir + fileName
+	err := ctx.SaveUploadedFile(form.File, filePath)
+	if err != nil {
+		logger.Error(err.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+	voiceUrl := fmt.Sprintf("%s/voice/%s", common.Conf.App.HostName, fileName)
+	Response(ctx, errorcode.Success, nil, true, "操作成功")
+	db := common.GetGorm()
+	chat := common.TChatRecord{
+		Type:      form.Type,
+		Avatar:    form.Avatar,
+		Content:   voiceUrl,
+		IpAddress: form.IpAddress,
+		IpSource:  form.IpSource,
+		Nickname:  form.Nickname,
+	}
+	r1 := db.Model(&common.TChatRecord{}).Create(&chat)
+	if r1.Error != nil {
+		logger.Error(r1.Error.Error())
+	}
+	if r1.Error == nil {
+		resp := WsMessage{
+			Type: form.Type,
+			Data: chat,
+		}
+		msg, _ := json.Marshal(&resp)
+		// 把语音消息群发回去
+		Manager.Broadcast <- msg
+	}
+}
 
 // Report 报告唯一访客信息
 func (b *BlogInfo) Report(ctx *gin.Context) {
