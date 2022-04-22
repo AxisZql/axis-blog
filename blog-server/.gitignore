@@ -1,0 +1,12 @@
+deployment/nginx/frontend
+deployment/nginx/cert
+deployment/nginx/nginx.*
+
+vendor
+.vscode
+.idea
+cmd/*.debug
+static
+
+config-backup.toml
+.DS_Store
