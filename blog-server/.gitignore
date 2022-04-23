@@ -1,6 +1,15 @@
-deployment/nginx/frontend
-deployment/nginx/cert
-deployment/nginx/nginx.*
+deployment/nginx/frontend/admin/*/
+deployment/nginx/frontend/admin/favicon.ico
+deployment/nginx/frontend/admin/index.html
+
+deployment/nginx/frontend/blog/*/
+deployment/nginx/frontend/blog/favicon.ico
+deployment/nginx/frontend/blog/index.html
+
+
+deployment/nginx/cert/*.key
+deployment/nginx/cert/*.pem
+deployment/nginx/nginx-backup.*
 
 vendor
 .vscode
