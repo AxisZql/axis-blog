@@ -76,6 +76,10 @@ axios.interceptors.response.use(
     switch (response.data.code) {
       case 50000:
         Vue.prototype.$toast({ type: "error", message: "系统异常" });
+        break;
+      case 60000 || 40300 || 40100 || 51000 || 52000 || 404000 || 52001 || 52002:
+          Vue.prototype.$toast({ type: "error", message: response.data.message });
+          break;
     }
     return response;
   },
