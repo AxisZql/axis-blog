@@ -40,3 +40,6 @@ const QQLoginError ErrCode = 53001
 
 // WeiboLoginError 微博登陆错误
 const WeiboLoginError ErrCode = 53002
+
+// SenitiveWordError 含有敏感词错误
+const SenitiveWordError ErrCode = 60000

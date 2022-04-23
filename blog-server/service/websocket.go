@@ -155,7 +155,11 @@ func (c *Client) Read() {
 			r1 := db.Model(&common.TChatRecord{}).Order("create_time ASC").Limit(12).Find(&chatList)
 			if r1.Error != nil && r1.Error != gorm.ErrRecordNotFound {
 				logger.Error(r1.Error.Error())
-				c.Send <- []byte("系统异常")
+				chat := common.TChatRecord{
+					Content: "系统异常",
+				}
+				resp, _ := json.Marshal(&WsMessage{Type: 3, Data: chat})
+				c.Send <- []byte(resp)
 				return
 			}
 			// 按照时间正序排序
@@ -173,10 +177,21 @@ func (c *Client) Read() {
 			var chat common.TChatRecord
 			msgByte, _ := json.Marshal(&msg.Data)
 			_ = json.Unmarshal(msgByte, &chat)
+			senitiveWordList := senitiveForest.GetSenitiveWord(chat.Content)
+			if len(senitiveWordList) != 0 {
+				m := fmt.Sprintf("聊天消息存在敏感词:%v", senitiveWordList)
+				logger.Error(m)
+				chat.Content = m
+				resp, _ := json.Marshal(&WsMessage{Type: 3, Data: chat})
+				c.Send <- []byte(resp)
+				break
+			}
 			r1 := db.Create(&chat)
 			if r1.Error != nil {
 				logger.Error(r1.Error.Error())
-				c.Send <- []byte("系统异常")
+				chat.Content = "系统异常"
+				resp, _ := json.Marshal(&WsMessage{Type: 3, Data: chat})
+				c.Send <- []byte(resp)
 				return
 			}
 			resp, _ := json.Marshal(&WsMessage{Type: 3, Data: chat})
@@ -198,7 +213,11 @@ func (c *Client) Read() {
 				r1 := db.Where("id = ?", req.ID).First(&record)
 				if r1.Error != nil && r1.Error != gorm.ErrRecordNotFound {
 					logger.Error(r1.Error.Error())
-					c.Send <- []byte("系统异常")
+					chat := common.TChatRecord{
+						Content: "系统异常",
+					}
+					resp, _ := json.Marshal(&WsMessage{Type: 3, Data: chat})
+					c.Send <- []byte(resp)
 					return
 				}
 				voiceUrl := strings.Split(record.Content, "voice/")
@@ -207,7 +226,11 @@ func (c *Client) Read() {
 					err := os.Remove(voicePath)
 					if err != nil {
 						logger.Error(err.Error())
-						c.Send <- []byte("系统异常")
+						chat := common.TChatRecord{
+							Content: "系统异常",
+						}
+						resp, _ := json.Marshal(&WsMessage{Type: 3, Data: chat})
+						c.Send <- []byte(resp)
 						return
 					}
 				}
@@ -295,7 +318,7 @@ func (mw *MyWebSocket) WebSocketHandle(ctx *gin.Context) {
 			IpSource:   addr.Data.Province,
 			UserId:     userid,
 			Start:      time.Now(),
-			ExpireTime: time.Minute * 1,
+			ExpireTime: time.Second * 50,
 		}
 		Manager.Register <- client
 		go client.Read()

@@ -5,10 +5,11 @@ import (
 	"blog-server/common/errorcode"
 	"encoding/json"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 	"io/ioutil"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type Message struct{}
@@ -24,6 +25,11 @@ func (m *Message) SaveMessage(ctx *gin.Context) {
 	var form reqSaveMessage
 	if err := ctx.ShouldBindJSON(&form); err != nil {
 		Response(ctx, errorcode.ValidError, nil, false, "参数校验失败")
+		return
+	}
+	senitiveWordList := senitiveForest.GetSenitiveWord(form.MessageContent)
+	if len(senitiveWordList) != 0 {
+		Response(ctx, errorcode.SenitiveWordError, nil, false, fmt.Sprintf("含有敏感词:%v", senitiveWordList))
 		return
 	}
 	db := common.GetGorm()
