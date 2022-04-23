@@ -27,7 +27,7 @@
 
 ## 预览地址
 
-**项目访问地址:**  [https://magic-number-tool.top]([https://magic-number-tool.top])
+**项目访问地址:**  [https://magic-number-tool.top](https://magic-number-tool.top)
 
 **Github地址:** [https://github.com/AxisZql/axis-blog](https://github.com/AxisZql/axis-blog)
 
