@@ -14,4 +14,5 @@ RUN apk add tzdata --no-cache \
 RUN mkdir -p $WORKDIR/static #创建静态文件目录
 COPY --from=builder $WORKDIR/axisblog $WORKDIR
 COPY --from=builder $WORKDIR/config.toml $WORKDIR
+COPY --from=builder $WORKDIR/sensitive-words.txt $WORKDIR
 CMD ["./axisblog"]

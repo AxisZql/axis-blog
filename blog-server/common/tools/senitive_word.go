@@ -25,7 +25,7 @@ type Forest struct {
 }
 
 func readSenitiveWordFile() ([]string, error) {
-	data, err := ioutil.ReadFile("./common/tools/sensitive-words.txt")
+	data, err := ioutil.ReadFile("./sensitive-words.txt")
 	if err != nil {
 		log.Fatal(err)
 		return nil, err
