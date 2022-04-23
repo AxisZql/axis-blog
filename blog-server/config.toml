@@ -1,28 +1,29 @@
 [app]
-port = 8080
+port = 9080
 init_models = "true"
-host_name = "http://localhost"
+host_name = "http://localhost:9080"
 loglevel = "debug"
 logfile = "./tmp/axis-blog/log.log"
 avatar_dir = "./static/avatar/"
 article_dir = "./static/articles/"
-voice_dir = "./static/voice"
-photo_dir = "./static/photos"
-config_dir = "./static/config"
-talk_dir = "./static/talks"
+voice_dir = "./static/voice/"
+photo_dir = "./static/photos/"
+config_dir = "./static/config/"
+talk_dir = "./static/talks/"
 
 [db]
 type = "mysql"
 host = "localhost"
 port = "3306"
 username = "root"
-password = "001130!@#"
+password = ""
 dbname = "myBlog"
 
 [redis]
 host = "localhost"
 port = "6379"
-password = "d"
+db = 0
+password = ""
 
 [rabbitmq]
 host = "localhost"
