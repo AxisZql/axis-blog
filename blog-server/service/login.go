@@ -199,7 +199,7 @@ func (l *Login) LoginOut(ctx *gin.Context) {
 			return
 		}
 	}
-	for key, _ := range _session.Values {
+	for key := range _session.Values {
 		delete(_session.Values, key)
 	}
 	_ = _session.Save(ctx.Request, ctx.Writer)

@@ -10,3 +10,5 @@ static
 
 config-backup.toml
 .DS_Store
+
+/common/tools/*.txt

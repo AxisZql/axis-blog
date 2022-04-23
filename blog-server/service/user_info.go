@@ -192,7 +192,7 @@ func (u *UserInfo) SaveUserEmail(ctx *gin.Context) {
 
 	}
 	// 清除登陆状态
-	for key, _ := range _session.Values {
+	for key := range _session.Values {
 		delete(_session.Values, key)
 	}
 	_ = _session.Save(ctx.Request, ctx.Writer)
