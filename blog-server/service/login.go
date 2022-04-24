@@ -5,10 +5,12 @@ import (
 	"blog-server/common/errorcode"
 	"blog-server/common/rediskey"
 	"fmt"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
 	"github.com/mssola/user_agent"
-	"time"
+	"gorm.io/gorm"
 )
 
 type Login struct{}
@@ -166,8 +168,19 @@ func (l *Login) Login(ctx *gin.Context) {
 	data.UserInfoId = user.UserInfoId
 	data.Username = user.Username
 
+	// 获取权限
+	var userRole common.TUserRole
+	db := common.GetGorm()
+	r2 := db.Where("user_id = ?", userInfo.ID).First(&userRole)
+	if r2.Error != nil && r2.Error != gorm.ErrRecordNotFound {
+		logger.Error(r2.Error.Error())
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
+
 	_session.Values["a_userid"] = user.ID
 	_session.Values["login_time"] = time.Now().Unix()
+	_session.Values["role"] = userRole.RoleId
 	err = _session.Save(ctx.Request, ctx.Writer)
 	if err != nil {
 		Response(ctx, errorcode.Fail, nil, false, "系统异常")
