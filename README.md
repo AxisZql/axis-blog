@@ -27,7 +27,7 @@
 
 ## 预览地址
 
-**项目访问地址:**  [https://magic-number-tool.top](https://magic-number-tool.top)
+**项目访问地址:**  [https://axiszql.com](https://axiszql.com)
 
 **Github地址:** [https://github.com/AxisZql/axis-blog](https://github.com/AxisZql/axis-blog)
 
@@ -156,15 +156,15 @@
 
 ## 项目截图
 
-![image.png](https://static.magic-number-tool.top/articles/a3bd02862df8d7f5adcf2d4dab63d36f.png)
+![image.png](https://static.axiszql.com/articles/a3bd02862df8d7f5adcf2d4dab63d36f.png)
 
-![image.png](https://static.magic-number-tool.top/articles/3d816006bb2756549246e9844d284c22.png)
+![image.png](https://static.axiszql.com/articles/3d816006bb2756549246e9844d284c22.png)
 
 
 
-![image.png](https://static.magic-number-tool.top/articles/9a6652f4d549550109184be38ff086a5.png)
+![image.png](https://static.axiszql.com/articles/9a6652f4d549550109184be38ff086a5.png)
 
-![image.png](https://static.magic-number-tool.top/articles/4ae448e10fd42f2654833595e5e3404d.png)
+![image.png](https://static.axiszql.com/articles/4ae448e10fd42f2654833595e5e3404d.png)
 
 ## 部署方法
 
