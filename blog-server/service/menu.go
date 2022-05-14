@@ -92,12 +92,11 @@ func (m *Menu) ListMenuOptions(ctx *gin.Context) {
 }
 
 func (m *Menu) ListUserMenus(ctx *gin.Context) {
-	_session, err := Store.Get(ctx.Request, "CurUser")
-	if err != nil {
+	userid, exist := ctx.Get("a_userid")
+	if !exist {
 		Response(ctx, errorcode.Fail, nil, false, "系统异常")
 		return
 	}
-	userid := _session.Values["a_userid"]
 	db := common.GetGorm()
 	userAuth := common.TUserAuth{}
 	r := db.Where("id = ?", userid).First(&userAuth)

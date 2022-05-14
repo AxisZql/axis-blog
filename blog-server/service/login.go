@@ -2,9 +2,12 @@ package service
 
 import (
 	"blog-server/common"
+	"blog-server/common/auth"
 	"blog-server/common/errorcode"
 	"blog-server/common/rediskey"
 	"fmt"
+	"github.com/pkg/errors"
+	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -47,11 +50,6 @@ func (l *Login) Login(ctx *gin.Context) {
 	var form reqLogin
 	if err := ctx.ShouldBind(&form); err != nil {
 		Response(ctx, errorcode.ValidError, nil, false, "用户名和密码不能为空")
-		return
-	}
-	_session, err2 := Store.Get(ctx.Request, "CurUser")
-	if err2 != nil {
-		Response(ctx, errorcode.Fail, nil, false, "系统异常")
 		return
 	}
 	curd := common.Curd{}
@@ -178,11 +176,15 @@ func (l *Login) Login(ctx *gin.Context) {
 		return
 	}
 
-	_session.Values["a_userid"] = user.ID
-	_session.Values["login_time"] = time.Now().Unix()
-	_session.Values["role"] = userRole.RoleId
-	err = _session.Save(ctx.Request, ctx.Writer)
+	token, err := auth.JwtEnc(user.ID, userRole.RoleId)
+	http.SetCookie(ctx.Writer, &http.Cookie{
+		Name:   "ticket",
+		Value:  token,
+		Secure: true,
+	})
 	if err != nil {
+		err = errors.Wrap(err, "登陆生成token异常")
+		logger.Error(fmt.Sprintf("%+v", err))
 		Response(ctx, errorcode.Fail, nil, false, "系统异常")
 		return
 	}
@@ -200,8 +202,7 @@ func (l *Login) Login(ctx *gin.Context) {
 }
 
 func (l *Login) LoginOut(ctx *gin.Context) {
-	_session, _ := Store.Get(ctx.Request, "CurUser")
-	auid := _session.Values["a_userid"]
+	auid, _ := ctx.Get("a_userid")
 	if auid != nil {
 		// 下线用户
 		redisClient := common.GetRedis()
@@ -212,9 +213,12 @@ func (l *Login) LoginOut(ctx *gin.Context) {
 			return
 		}
 	}
-	for key := range _session.Values {
-		delete(_session.Values, key)
-	}
-	_ = _session.Save(ctx.Request, ctx.Writer)
+	// 删除cookie
+	http.SetCookie(ctx.Writer, &http.Cookie{
+		Name:   "ticket",
+		Value:  "",
+		Secure: false,
+		MaxAge: -1,
+	})
 	Response(ctx, errorcode.Success, nil, true, "操作成功")
 }

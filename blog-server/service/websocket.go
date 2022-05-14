@@ -298,8 +298,7 @@ func (mw *MyWebSocket) WebSocketHandle(ctx *gin.Context) {
 		logger.Error(err.Error())
 		return
 	}
-	_session, _ := Store.Get(ctx.Request, "CurUser")
-	userid := _session.Values["a_userid"]
+	userid, _ := ctx.Get("a_userid")
 	ip := ctx.ClientIP()
 	addr, err := common.GetIpAddressAndSource(ip)
 	if err != nil {

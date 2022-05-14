@@ -147,8 +147,11 @@ func (t *Talk) SaveTalkLike(ctx *gin.Context) {
 		return
 	}
 	db := common.GetGorm()
-	_session, _ := Store.Get(ctx.Request, "CurUser")
-	auid := _session.Values["a_userid"]
+	auid, ok := ctx.Get("a_userid")
+	if !ok {
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
 	var ua common.TUserAuth
 	r1 := db.Where("id = ?", auid).First(&ua)
 	if r1.Error != nil {
@@ -236,8 +239,11 @@ func (t *Talk) SaveOrUpdateTalk(ctx *gin.Context) {
 		Response(ctx, errorcode.ValidError, nil, false, "参数校验失败")
 		return
 	}
-	_session, _ := Store.Get(ctx.Request, "CurUser")
-	aid := _session.Values["a_userid"]
+	aid, exist := ctx.Get("a_userid")
+	if !exist {
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
 	var ua common.TUserAuth
 	var ui common.TUserInfo
 

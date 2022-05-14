@@ -2,10 +2,12 @@ package service
 
 import (
 	"blog-server/common"
+	"blog-server/common/auth"
 	"blog-server/common/errorcode"
 	"blog-server/common/rediskey"
 	"bytes"
 	"fmt"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -39,26 +41,35 @@ func Response(ctx *gin.Context, code int64, data interface{}, flag bool, message
 func Auth() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		// before request
-		_session, err := Store.Get(ctx.Request, "CurUser")
-		if err != nil {
+		token, err := ctx.Request.Cookie("ticket")
+		if err != nil || token == nil {
 			// 对下一步处理函数对执行进行拦截
+			err = errors.Wrap(err, "获取ticket失败")
+			logger.Error(fmt.Sprintf("%+v", err))
 			ctx.Abort()
 			Response(ctx, errorcode.Fail, nil, false, "系统异常")
 			return
 		}
-		userid := _session.Values["a_userid"]
-		role := _session.Values["role"]
-		b := _session.Values["login_time"]
-		if userid == nil || b == nil || role == nil {
+		payload, err := auth.JwtDec(token.Value)
+		if err != nil {
+			err = errors.Wrap(err, "凭证异常")
+			logger.Error(fmt.Sprintf("%+v", err))
 			ctx.Abort()
-			delete(_session.Values, "CurUser")
-			_ = _session.Save(ctx.Request, ctx.Writer)
-			Response(ctx, errorcode.AuthorizedError, nil, false, "没有操作权限")
+			Response(ctx, errorcode.AuthorizedError, nil, false, "认证异常")
 			return
 		}
-
+		if payload.Role == 0 || payload.AUserID == 0 {
+			ctx.Abort()
+			Response(ctx, errorcode.AuthorizedError, nil, false, "认证异常")
+			return
+		}
+		userid := payload.AUserID
+		role := payload.Role
+		// 保存在gin的context中
+		ctx.Set("a_userid", userid)
+		ctx.Set("role", role)
 		if strings.Contains(ctx.Request.URL.Path, "/admin") {
-			if role.(int64) != 1 {
+			if role != 1 {
 				ctx.Abort()
 				Response(ctx, errorcode.AuthorizedError, nil, false, "没有操作权限")
 				return
@@ -66,7 +77,7 @@ func Auth() gin.HandlerFunc {
 		}
 
 		redisClient := common.GetRedis()
-		exist, err := redisClient.SIsMember(rediskey.OnlineUser, userid.(int64)).Result()
+		exist, err := redisClient.SIsMember(rediskey.OnlineUser, userid).Result()
 		if err != nil && err != redis.Nil {
 			ctx.Abort()
 			logger.Error(err.Error())
@@ -75,8 +86,6 @@ func Auth() gin.HandlerFunc {
 		}
 		if !exist {
 			ctx.Abort()
-			delete(_session.Values, "CurUser")
-			_ = _session.Save(ctx.Request, ctx.Writer)
 			Response(ctx, errorcode.ExpireLoginTime, nil, false, "登陆状态过期(您已经下线)")
 			return
 		}
@@ -100,8 +109,15 @@ func (r responseBodyWriter) Write(b []byte) (int, error) {
 func LogAopReq() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		db := common.GetGorm()
-		_session, _ := Store.Get(c.Request, "CurUser")
-		userid := _session.Values["a_userid"]
+		userid, exist := c.Get("a_userid")
+		if !exist {
+			c.Abort()
+			err := errors.New("userid获取异常")
+			logger.Error(fmt.Sprintf("%+v", err.Error()))
+			Response(c, errorcode.Fail, nil, false, "系统异常")
+			return
+		}
+
 		var ua common.TUserAuth
 		var ui common.TUserInfo
 		r1 := db.Where("id = ?", userid).First(&ua)

@@ -328,8 +328,11 @@ func (user *UserAuth) UpdateAdminPassword(ctx *gin.Context) {
 		return
 	}
 	db := common.GetGorm()
-	_session, _ := Store.Get(ctx.Request, "CurUser")
-	auid := _session.Values["a_userid"]
+	auid, exist := ctx.Get("a_userid")
+	if !exist {
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
 	var au common.TUserAuth
 	r1 := db.Where("id = ?", auid).First(&au)
 	if r1.Error != nil {

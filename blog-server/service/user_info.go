@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm"
 	"io/ioutil"
 	"mime/multipart"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -32,8 +33,11 @@ func (u *UserInfo) UpdateUserInfo(ctx *gin.Context) {
 		Response(ctx, errorcode.ValidError, nil, false, "参数校验失败")
 	}
 	db := common.GetGorm()
-	_session, _ := Store.Get(ctx.Request, "CurUser")
-	userid := _session.Values["a_userid"]
+	userid, exist := ctx.Get("a_userid")
+	if !exist {
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
 	userAuth := common.TUserAuth{}
 	userInfo := common.TUserInfo{}
 	r1 := db.Where("id = ?", userid).First(&userAuth)
@@ -70,8 +74,11 @@ func (u *UserInfo) UpdateUserAvatar(ctx *gin.Context) {
 		Response(ctx, errorcode.ValidError, nil, true, "参数校验失败")
 		return
 	}
-	_session, _ := Store.Get(ctx.Request, "CurUser")
-	userid := _session.Values["a_userid"]
+	userid, exist := ctx.Get("a_userid")
+	if !exist {
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
 	db := common.GetGorm()
 	ua := common.TUserAuth{}
 	ui := common.TUserInfo{}
@@ -156,9 +163,12 @@ func (u *UserInfo) SaveUserEmail(ctx *gin.Context) {
 		Response(ctx, errorcode.UsernameExistError, nil, false, "该邮箱已经被绑定")
 		return
 	}
-	_session, _ := Store.Get(ctx.Request, "CurUser")
 	// 获取当前用户id
-	userid := _session.Values["a_userid"]
+	userid, exist := ctx.Get("a_userid")
+	if !exist {
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
 	userInfo := common.TUserInfo{}
 	userAuth := common.TUserAuth{}
 	r1 := db.Where("id = ?", userid).First(&userAuth)
@@ -192,10 +202,12 @@ func (u *UserInfo) SaveUserEmail(ctx *gin.Context) {
 
 	}
 	// 清除登陆状态
-	for key := range _session.Values {
-		delete(_session.Values, key)
-	}
-	_ = _session.Save(ctx.Request, ctx.Writer)
+	http.SetCookie(ctx.Writer, &http.Cookie{
+		Name:   "ticket",
+		Value:  "",
+		Secure: false,
+		MaxAge: -1,
+	})
 	Response(ctx, errorcode.Success, nil, true, "操作成功")
 }
 

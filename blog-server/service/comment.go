@@ -133,8 +133,11 @@ func (c *Comment) SaveComment(ctx *gin.Context) {
 		return
 	}
 	db := common.GetGorm()
-	_session, _ := Store.Get(ctx.Request, "CurUser")
-	userid := _session.Values["a_userid"]
+	userid, exist := ctx.Get("a_userid")
+	if !exist {
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
 	var ua common.TUserAuth
 	r := db.Where("id = ?", userid).First(&ua)
 	if r.Error != nil && r.Error != gorm.ErrRecordNotFound {
@@ -242,8 +245,11 @@ func (c *Comment) SaveCommentLike(ctx *gin.Context) {
 		return
 	}
 	db := common.GetGorm()
-	_session, _ := Store.Get(ctx.Request, "CurUser")
-	auid := _session.Values["a_userid"]
+	auid, ok := ctx.Get("a_userid")
+	if !ok {
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
 	var ua common.TUserAuth
 	r1 := db.Where("id = ?", auid).First(&ua)
 	if r1.Error != nil {
