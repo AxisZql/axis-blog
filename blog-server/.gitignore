@@ -18,6 +18,7 @@ cmd/*.debug
 static
 
 config-backup.toml
+config-dev.toml
 .DS_Store
 
 /common/tools/*.txt
