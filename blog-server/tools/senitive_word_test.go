@@ -6,7 +6,7 @@ import (
 )
 
 func TestReadSenitiveWordFile(t *testing.T) {
-	readSenitiveWordFile()
+	_, _ = readSenitiveWordFile()
 }
 
 func TestGenerateSenitiveForest(t *testing.T) {

@@ -19,7 +19,7 @@ type treeNode struct {
 	ExistChild map[rune]*treeNode // 记录唯一的孩子节点
 }
 
-// Fores 记录所有敏感树的森林
+// Forest 记录所有敏感树的森林
 type Forest struct {
 	Tree map[rune]*treeNode //存放敏感树树根和数根值之间的映射关系
 }
@@ -94,7 +94,7 @@ func (forest *Forest) GetSenitiveWord(text string) []string {
 	senitiveWordList := make([]string, 0)
 	_text := []rune(text)
 	for i := 0; i < len(_text); i++ {
-		length := forest.getSentiveWordLength(_text[i:])
+		length := forest.getSensitiveWordLength(_text[i:])
 		if length != 0 {
 			senitiveWordList = append(senitiveWordList, string(_text[i:i+length]))
 			// 跳过检测处理的关键词（最短匹配策略）
@@ -105,7 +105,7 @@ func (forest *Forest) GetSenitiveWord(text string) []string {
 }
 
 // 从子文本中提取敏感词长度
-func (forest *Forest) getSentiveWordLength(subText []rune) int {
+func (forest *Forest) getSensitiveWordLength(subText []rune) int {
 	var count int
 	if len(subText) == 0 {
 		return count
@@ -145,7 +145,7 @@ func (forest *Forest) getSentiveWordLength(subText []rune) int {
 var senitiveForest *Forest
 var once sync.Once
 
-// 全局初始化敏感词汇森林（单例模式）
+// GetSenitiveForest 全局初始化敏感词汇森林（单例模式）
 func GetSenitiveForest() *Forest {
 	once.Do(func() {
 		senitiveForest = initSenitiveForest()

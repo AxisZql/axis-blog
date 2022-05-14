@@ -3,10 +3,12 @@ package service
 import (
 	"blog-server/common"
 	"blog-server/common/errorcode"
+	"blog-server/tools/elastic"
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
 	"gorm.io/gorm"
 	"io/ioutil"
 	"mime/multipart"
@@ -289,8 +291,12 @@ func (a *Article) SaveOrUpdateArticle(ctx *gin.Context) {
 	if form.Status == 0 {
 		form.Status = 1
 	}
-	_session, _ := Store.Get(ctx.Request, "CurUser")
-	aid := _session.Values["a_userid"]
+
+	aid, exist := ctx.Get("a_userid")
+	if !exist {
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
 	var ua common.TUserAuth
 	var ui common.TUserInfo
 
@@ -783,47 +789,76 @@ func (a *Article) ListArticleBySearch(ctx *gin.Context) {
 		Response(ctx, errorcode.ValidError, nil, false, "参数验证失败")
 		return
 	}
-	db := common.GetGorm()
+
 	var articleList []articleSearch
-	r := db.Table("t_article").Where(fmt.Sprintf("article_title LIKE %q or article_content LIKE %q", "%"+form.KeyWords+"%", "%"+form.KeyWords+"%")).Find(&articleList)
-	if r.Error != nil && r.Error != gorm.ErrRecordNotFound {
-		logger.Error(r.Error.Error())
-		Response(ctx, errorcode.Fail, nil, false, "系统异常")
-		return
+	esResp, err := elastic.HighlightQueryArticle(form.KeyWords)
+	if err != nil {
+		err = errors.Wrap(err, "es高亮搜索失败")
 	}
-	// 高亮搜索关键词
-	html := "<span style='color:#f47466'>%s</span>"
-	for i, val := range articleList {
-		t := strings.Split(val.ArticleTitle, form.KeyWords)
-		if len(t) >= 2 {
-			articleList[i].ArticleTitle = ""
-			count := 0
-			for _, val := range t {
-				articleList[i].ArticleTitle += val + fmt.Sprintf(html, form.KeyWords)
-				count++
-				if count+1 == len(t) {
-					break
-				}
-			}
-			articleList[i].ArticleTitle += t[len(t)-1]
+	for _, res := range *esResp {
+		title := fmt.Sprintf("%v", res.Highlight.(map[string]interface{})["article_title"])
+		title = strings.Replace(strings.Replace(title, "[", "", 1), "]", "", -1)
+		content := fmt.Sprintf("%v", res.Highlight.(map[string]interface{})["article_content"])
+		content = strings.Replace(strings.Replace(content, "[", "", 1), "]", "", -1)
 
+		if title == "<nil>" {
+			title = res.Source.ArticleTitle
+		}
+		if content == "<nil>" {
+			content = res.Source.ArticleContent
 		}
 
-		t = strings.Split(val.ArticleContent, form.KeyWords)
-		if len(t) >= 2 {
-			articleList[i].ArticleContent = ""
-			count := 0
-			for _, val := range t {
-				articleList[i].ArticleContent += val + fmt.Sprintf(html, form.KeyWords)
-				count++
-				if count+1 == len(t) {
-					break
-				}
-			}
-			articleList[i].ArticleContent += t[len(t)-1]
-		}
+		articleList = append(articleList,
 
+			articleSearch{
+				ID:             res.Source.ID,
+				ArticleTitle:   title,
+				ArticleContent: content,
+				IsDelete:       res.Source.IsDelete,
+				Status:         res.Source.Status,
+			})
 	}
+
+	// 高亮搜索关键词 没使用elasticsearch时低效的高亮搜索版本
+	//db := common.GetGorm()
+	//r := db.Table("t_article").Where(fmt.Sprintf("article_title LIKE %q or article_content LIKE %q", "%"+form.KeyWords+"%", "%"+form.KeyWords+"%")).Find(&articleList)
+	//if r.Error != nil && r.Error != gorm.ErrRecordNotFound {
+	//	logger.Error(r.Error.Error())
+	//	Response(ctx, errorcode.Fail, nil, false, "系统异常")
+	//	return
+	//}
+	//html := "<span style='color:#f47466'>%s</span>"
+	//for i, val := range articleList {
+	//	t := strings.Split(val.ArticleTitle, form.KeyWords)
+	//	if len(t) >= 2 {
+	//		articleList[i].ArticleTitle = ""
+	//		count := 0
+	//		for _, val := range t {
+	//			articleList[i].ArticleTitle += val + fmt.Sprintf(html, form.KeyWords)
+	//			count++
+	//			if count+1 == len(t) {
+	//				break
+	//			}
+	//		}
+	//		articleList[i].ArticleTitle += t[len(t)-1]
+	//
+	//	}
+	//
+	//	t = strings.Split(val.ArticleContent, form.KeyWords)
+	//	if len(t) >= 2 {
+	//		articleList[i].ArticleContent = ""
+	//		count := 0
+	//		for _, val := range t {
+	//			articleList[i].ArticleContent += val + fmt.Sprintf(html, form.KeyWords)
+	//			count++
+	//			if count+1 == len(t) {
+	//				break
+	//			}
+	//		}
+	//		articleList[i].ArticleContent += t[len(t)-1]
+	//	}
+	//
+	//}
 	Response(ctx, errorcode.Success, articleList, true, "操作成功")
 
 }
@@ -844,8 +879,11 @@ func (a *Article) SaveArticleLike(ctx *gin.Context) {
 		return
 	}
 	db := common.GetGorm()
-	_session, _ := Store.Get(ctx.Request, "CurUser")
-	auid := _session.Values["a_userid"]
+	auid, ok := ctx.Get("a_userid")
+	if !ok {
+		Response(ctx, errorcode.Fail, nil, false, "系统异常")
+		return
+	}
 	var ua common.TUserAuth
 	r1 := db.Where("id = ?", auid).First(&ua)
 	if r1.Error != nil {

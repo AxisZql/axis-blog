@@ -92,6 +92,10 @@ type Configure struct {
 		AppKey  string `json:"app_key" remark:"ip api key" must:"false"`
 		AppCode string `json:"app_code" remark:"ip api code" must:"false"`
 	}
+
+	Es struct {
+		Addr string `json:"addr" remark:"elasticsearch server address" must:"false"`
+	}
 }
 
 func InitViper() {

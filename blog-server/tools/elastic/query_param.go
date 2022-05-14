@@ -66,7 +66,6 @@ type hist struct {
 	ID        string      `json:"_id"`
 	Score     float64     `json:"_score"`
 	Ignored   []string    `json:"_ignore"`
-	Source    interface{} `json:"_source"`
 	Highlight interface{} `json:"highlight"`
 }
 

@@ -3,6 +3,7 @@ package cmd
 import (
 	"blog-server/common"
 	ctrl "blog-server/service"
+	"blog-server/tools/elastic"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cobra"
@@ -22,6 +23,8 @@ var apiCmd = &cobra.Command{
 func AxAPi() {
 	// 运行环境初始化
 	common.EnvInit()
+	// 初始化elasticsearch
+	_ = elastic.GetElasticClient()
 	router := gin.Default()
 	Routers(router)
 	port := fmt.Sprintf(":%d", common.Conf.App.Port)
@@ -70,7 +73,8 @@ func Routers(r *gin.Engine) {
 	r.GET("/ws", ws.WebSocketHandle)                                           //webSocket服务
 	r.GET("/", blogInfo.GetBlogHomeInfo)                                       //查看博客信息
 	r.POST("/login", login.Login)                                              //用户登陆
-	r.GET("/logout", login.LoginOut)                                           //用户注销
+	r.POST("/logout", ctrl.Auth(), login.LoginOut)                             //管理员注销
+	r.GET("/logout", ctrl.Auth(), login.LoginOut)                              //用户注销
 	r.POST("/register", userAuth.Register)                                     //用户注册
 	r.GET("/talks", talk.ListTalks)                                            //查看说说列表
 	r.GET("/talks/:talkId", talk.GetTalkById)                                  //根据id查看说说

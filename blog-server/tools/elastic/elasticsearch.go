@@ -7,10 +7,11 @@ package elastic
 */
 
 import (
+	"blog-server/common"
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
+	"github.com/pkg/errors"
 	"io"
 	"log"
 	"net/http"
@@ -29,7 +30,7 @@ var (
 func newElasticClient() {
 	var err error
 	es7, err = elastic.NewClient(elastic.Config{
-		Addresses: []string{"http://axiszql.com:9200"},
+		Addresses: []string{common.Conf.Es.Addr},
 		Transport: &http.Transport{ //配置http连接池
 			MaxIdleConns:          10,          //最大keep-alive连接数量
 			ResponseHeaderTimeout: time.Second, // 设置响应超时时间
