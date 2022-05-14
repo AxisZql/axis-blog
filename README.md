@@ -8,16 +8,16 @@
 <p align=center>
   基于Gin + Vue开发的前后端分离的博客，前端由<a href="https://github.com/X1192176811">风宇</a>巨佬开发，本人用Go语言对该博客进行后端全面改写。
 </p>
-
 <p align="center">
   <a target="_blank" href="https://github.com/AxisZql/axis-blog">
     <img src="https://img.shields.io/apm/l/vim-mode"/>
     <img src="https://img.shields.io/badge/redis-6.2.6-red&logo=Redis"/>
+    <img src="https://img.shields.io/badge/elasticsearch-7.17.3-yellow&logo=Elasticsearch"/>
     <img src="https://img.shields.io/badge/GO-1.17-00acd7?logo=Go&logoColor=00acd7"/>
     <img src="https://img.shields.io/badge/Gin-1.7.7-blue"/>
     <img src="https://img.shields.io/badge/MySQL-8.0+-blue"/>
     <img src="https://img.shields.io/badge/WebSocket-laster-brightgreen"/>
-     <img src="https://img.shields.io/badge/vue-2.5.17-green"/>
+    <img src="https://img.shields.io/badge/vue-2.5.17-green"/>
   </a>
 </p>
 
@@ -130,7 +130,7 @@
 
 **前端：** vue + vuex + vue-router + axios + vuetify + element + echarts
 
-**后端：** Gin + nginx + docker + gorm +Mysql + Redis + Websocket
+**后端：** Gin + nginx + docker + gorm +Mysql + Redis + Websocket+Elasticsearch
 
 ## 运行环境
 
