@@ -111,7 +111,7 @@ func (l *Login) Login(ctx *gin.Context) {
 		Duration: rediskey.ExpireUserLike,
 		Fun: func() (interface{}, error) {
 			db := common.GetGorm()
-			var likeRecord UserLikeRecord
+			var likeRecord = new(UserLikeRecord)
 			var tLike1 []common.TLike
 			var tLike2 []common.TLike
 			var tLike3 []common.TLike
@@ -149,7 +149,7 @@ func (l *Login) Login(ctx *gin.Context) {
 		data.TalkLikeSet = []int64{}
 	} else {
 		//如果有记录
-		tl := receiver.(UserLikeRecord)
+		tl := receiver.(*UserLikeRecord)
 		data.ArticleLikeSet = tl.ArticleLikeSet
 		data.CommentLikeSet = tl.CommentLikeSet
 		data.TalkLikeSet = tl.TalkLikeSet

@@ -513,7 +513,7 @@ func (a *Article) SaveArticleImages(ctx *gin.Context) {
 		return
 	}
 	imgUrl := fmt.Sprintf("%s/articles/%s", common.Conf.App.HostName, fileName)
-	Response(ctx, errorcode.Fail, imgUrl, true, "操作成功")
+	Response(ctx, errorcode.Success, imgUrl, true, "操作成功")
 }
 
 func (a *Article) DeleteArticle(ctx *gin.Context) {
