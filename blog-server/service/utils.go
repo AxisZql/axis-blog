@@ -181,3 +181,24 @@ func LogAopReq() func(c *gin.Context) {
 		}
 	}
 }
+
+// RecordIpAdder 将地理位置信息保存在redis
+func RecordIpAdder(redisClient *redis.Client, locate string) error {
+	result, err := redisClient.HGet(rediskey.VisitorArea, locate).Int64()
+	if err != nil && err != redis.Nil {
+		return err
+	}
+	if err == redis.Nil {
+		err := redisClient.HSet(rediskey.VisitorArea, locate, 1).Err()
+		if err != nil {
+			return err
+		}
+	} else {
+		b := result + 1
+		err = redisClient.HSet(rediskey.VisitorArea, locate, b).Err()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}

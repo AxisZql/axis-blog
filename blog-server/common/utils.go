@@ -1,14 +1,15 @@
 package common
 
 import (
-	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/lionsoul2014/ip2region/binding/golang/xdb"
 	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/gomail.v2"
 	"gorm.io/gorm"
-	"io/ioutil"
 	"math/rand"
-	"net/http"
+	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -40,39 +41,41 @@ func VerifyPwd(hash, pwd string) bool {
 	return true
 }
 
-//========= IP工具
-type ipInfo struct {
+// IpInfo ========= IP工具
+type IpInfo struct {
 	Code int64 `json:"code"`
 	Data struct {
 		Isp      string `json:"isp"` //运营商
 		Province string `json:"province"`
 		City     string `json:"city"`
+		Detail   string `json:"detail"`
 	} `json:"data"`
 }
 
 // GetIpAddressAndSource 获取IP地址和地区
-func GetIpAddressAndSource(ip string) (*ipInfo, error) {
-	var header = http.Header{
-		"Authorization": []string{fmt.Sprintf("APPCODE %s", Conf.Ip.AppCode)},
-	}
-	client := http.Client{Timeout: 5 * time.Second}
-	url := fmt.Sprintf(`http://cz88.rtbasia.com/search?ip=%s`, ip)
-	req, _ := http.NewRequest("GET", url, nil)
-	for k, v := range header {
-		req.Header[k] = v
-	}
-	resp, err := client.Do(req)
+func GetIpAddressAndSource(ip string) (*IpInfo, error) {
+	var _ipInfo IpInfo
+	abs, _ := filepath.Abs(".")
+	path := filepath.Join(abs, "axisIp.xdb")
+	region, err := xdb.NewWithFileOnly(path)
+	defer func() {
+		region.Close()
+	}()
 	if err != nil {
-		logger.Error(fmt.Sprintf("获取用户地理位置失败:%v", err))
 		return nil, err
 	}
-	defer resp.Body.Close()
-	_ipInfo := ipInfo{}
-	body, _ := ioutil.ReadAll(resp.Body)
-	err = json.Unmarshal(body, &_ipInfo)
+	locate, err := region.SearchByStr(ip)
 	if err != nil {
-		logger.Error(fmt.Sprintf("解析IP信息失败:%v", err))
 		return nil, err
+	}
+	addr := strings.Split(locate, "|")
+	if len(addr) == 0 {
+		return nil, errors.New("ERROR")
+	}
+	_ipInfo.Data.Province = addr[0]
+	_ipInfo.Data.City = addr[0]
+	if len(addr) > 1 {
+		_ipInfo.Data.Detail = addr[1]
 	}
 	return &_ipInfo, nil
 }

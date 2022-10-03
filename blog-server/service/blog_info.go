@@ -477,24 +477,14 @@ func (b *BlogInfo) Report(ctx *gin.Context) {
 	// 如果是新访客
 	if !exist {
 		redisClient := common.GetRedis()
-		result, err := redisClient.HGet(rediskey.VisitorArea, ipSource.Data.Province).Int64()
-		if err != nil && err != redis.Nil {
-			logger.Error(err.Error())
+		err = RecordIpAdder(redisClient, ipSource.Data.Province)
+		if err != nil {
 			Response(ctx, errorcode.Fail, nil, false, "系统异常")
 			return
 		}
-		if err == redis.Nil {
-			err := redisClient.HSet(rediskey.VisitorArea, ipSource.Data.Province, 1).Err()
+		if ipSource.Data.Detail != "" {
+			err = RecordIpAdder(redisClient, ipSource.Data.Province+"|"+ipSource.Data.Detail)
 			if err != nil {
-				logger.Error(err.Error())
-				Response(ctx, errorcode.Fail, nil, false, "系统异常")
-				return
-			}
-		} else {
-			b := result + 1
-			err = redisClient.HSet(rediskey.VisitorArea, ipSource.Data.Province, b).Err()
-			if err != nil {
-				logger.Error(err.Error())
 				Response(ctx, errorcode.Fail, nil, false, "系统异常")
 				return
 			}
